@@ -1,0 +1,209 @@
+---
+title: "R Assignment One"
+author: "Katherine Wolf"
+date: "January 24, 2020"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+mainfont: Calibri
+monofont: Lucida Console
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+
+```
+
+
+```{r}
+
+library(survival)
+library(knitr)
+
+set.seed(8765432)
+N <- 500    # Number of events
+            # (=sample size*(1-p[Censoring]) for uninformative censoring)
+p.x <- .5   # Marginal probability of either exposure: P(X1)=P(X2)=.5
+
+##### Generate matrix of covariates
+## A matrix representing each possible exposure combination:
+X.tmp <- t(matrix(c(0,0,0,
+                    0,1,0,
+                    1,0,0,
+                    1,1,1), 
+                  ncol=4))
+
+# Probability of each exposure combination: 0/0, 0/1, 1/0, 1/1:
+p.x1.x2 <- c((1-p.x)^2, 
+             (1-p.x)*p.x, 
+             p.x*(1-p.x), 
+             p.x^2)
+
+# Expected number of each exposure combo:
+N.x1.x2 <- round(N*p.x1.x2)
+
+# Repeat each exposure combination according to its expected number:
+X <- as.data.frame(X.tmp[rep(1:dim(X.tmp)[1], N.x1.x2),])
+
+names(X)<-c("x1","x2","x1.x2") # meaningful names
+
+N.sims <- 1000 # Number of simulations
+
+# At this point in the code, specify parameters (log-HRs, i.e. b coefficients) for a proportional hazards model as follows:
+
+# A scalar b0 corresponding to a constant baseline hazard h0(t) of 0.01.
+b0 <- log(0.01)
+
+# Scalars b1 and b2 both corresponding to main effect hazard ratios of 1.5.
+b1 <- log(1.5)
+b2 <- log(1.5)
+
+# A vector b3 corresponding to hazard ratios ranging from 1 to 3 
+# in increments of 0.2.
+b3 <- log(seq(from = 1, to = 3, by = 0.2))
+
+# Next, complete the next block of code as follows:
+# Generate a vector of exponentially distributed event times t.event stored in the data frame X.  Hint: Use the rexp function, with the rate parameter equal to the hazard.
+
+# Generate a vector of event indicators event that have the value 1 for everyone, stored in the data frame X.
+
+# Fit a Cox proportional hazards model corresponding to the analysis you wish to complete, and store the results in the object fit.ph.
+
+# Initialize storage matrix for results:
+p.values <- matrix(NA,N.sims,length(b3))
+for (j in 1:length(b3)) {
+  # Hazard function
+  lambda <- exp(b0 + b1*X$x1 + b2*X$x2 + b3[j]*X$x1.x2)
+  for (i in 1:N.sims){
+    # Generate exponentially distributed event times (t.event)
+    # and event indicator (event):
+    
+    # *****TO BE COMPLETED *****
+    
+    X$t.event <- rexp(n = N, rate = lambda)
+    
+    X$event <- 1
+    
+    # Fit corresponding Cox model and store results in fit.ph
+    
+    # *****TO BE COMPLETED *****
+    fit.ph <- coxph(Surv(t.event, event) ~ x1 + x2 + x1.x2, 
+                    data = X, 
+                    ties = "efron")
+    
+    # Collect p-value from interaction term:
+    p.values[i,j] <- summary(fit.ph)$coefficients[3,5]
+    }
+}
+
+# Average number of times null is rejected=empirical estimate of power
+p.lt.05 <- as.integer(p.values < 0.05)
+est.power.05 <- apply(matrix(p.lt.05,
+                             nrow=N.sims, 
+                             ncol=length(b3)),
+                      2,
+                      mean)
+
+# Redo the above code segment, but calculate the power assuming a significance criteria of 10% rather than 5%. Store it in the vector est.power.10.
+p.lt.10 <- as.integer(p.values < 0.10)
+est.power.10 <- apply(matrix(p.lt.10,
+                             nrow=N.sims, 
+                             ncol=length(b3)),
+                      2,
+                      mean)
+
+ratio.HR <- exp(b3) # Transform interaction coefficients to ratio scale.
+
+```
+
+
+# Questions
+
+*1. With mathematical notation, write out the statistical model you used to simulate the data for the power analysis given the assumptions listed above. Include: 1) The expression for the log-hazard function in terms of the covariates and parameters, and 2) specify the distribution of failure times given the hazard (general is fine). Clearly define all terms and parameters in the model. (15 points)*
+
+The expression for the log-hazard function is
+
+$log(h(t|\boldsymbol{x}, \boldsymbol{\beta})) =  log[h_0(t)] + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2$, where
+
+$log(h(t|\boldsymbol{x}, \boldsymbol{\beta}))$ is the natural logarithm of the instantaneous rate (hazard) of the event at time $t$ for a participant who has survived up to that time $t$, given the covariates in $\boldsymbol{x}$ and coefficients in $\boldsymbol{\beta}$;
+
+$log[h_0(t)]$ is the baseline instantaneous rate (hazard) of the event at time $t$ for a participant who had neither exposure, i.e., $x_1 = 0$ and $x_2 = 0$, and survived up to time $t$;
+
+$\boldsymbol{x}$ is a vector of covariates containing
+
+   + $x_1$, an indicator variable for the first binary exposure, with $x_1 = 1$ indicating that the participant was exposed and $x_1 = 0$ indicating that the participant was not exposed; and
+   
+   + $x_2$, an indicator variable for the second binary exposure, with $x_2 = 1$ indicating that the participant was exposed and $x_2 = 0$ indicating that the participant was not exposed;
+   
+$\boldsymbol{\beta}$ is a vector of coefficients including
+    + $\beta_1$ is the log hazard ratio comparing the hazard of the event for a participant who had the first exposure, i.e., $x_1 = 1$, to the hazard of the event for a participant who did not, i.e., $x_1 = 0$, holding the values of all other variables constant;
+    + $\beta_2$ is the log hazard ratio comparing the hazard of the event for a participant who had the second exposure, i.e., $x_2 = 1$, to the hazard of the event for a participant who did not, i.e., $x_2 = 0$, holding the values of all other variables constant; and
+    + $\beta_3$ is the log of the ratio of hazard ratios, where
+       - the hazard ratio in the numerator compares the hazard of the event for a participant who had both exposures in its numerator, i.e., $x_1 = 1$ and $x_2 = 1$, to the hazard of the event for a participant who did not have one but still had the other in its denominator, i.e., either $x_1 = 1$ and $x_2 = 0$ or $x_1 = 0$ and $x_2 = 1$, and
+       - the hazard ratio in the denominator compares the hazard of the event for a participant who only had the other exposure not held constant above, i.e., $x_1 = 0$ and $x_2 = 1$ if both numerator and denominator above had the first exposure $x_1 = 1$, or $x_1 = 1$ and $x_2 = 0$ if both numerator and denominator above had the second exposure $x_2 = 1$, to the hazard of the event for a participant who had neither exposure in the denominator, i.e., $x_1 = 0$ and $x_2 = 0$.
+       
+The distribution of failure times is here assumed to be exponential, i.e., $f(t) = \lambda e^{\lambda t}$, where $\lambda = e^{\beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2}$.
+
+\pagebreak
+
+2. In terms of parameter(s) from the model outlined above, specify the null ($H_0$) and alternative $H_A$ hypotheses for a test of multiplicative interaction. (5 points) 
+
+$H_0: \beta_3 = 0$ (or, equivalently, $e^{\beta_3} = 1$), i.e., the ratio of the hazard ratios described above to define $\beta_3$ equals one.
+
+$H_1: \beta_3 \neq 0$ (or, equivalently, $e^{\beta_3} \neq 1$), i.e., the ratio of the hazard ratios described above to define $\beta_3$ is not equal to one.
+
+\pagebreak
+
+3. Briefly (1 sentence) interpret the *HR* for the interaction term in the above model (generally, referencing $X_1$  and $X_2$). (5 points)
+
+The ratio of hazard ratios for the interaction term in the above model ($e^{\beta_3}$) compares the hazard ratio comparing a participant with both exposures in the numerator to only one in the denominator to the hazard ratio for a participant with only the other exposure in the numerator to neither exposure in the denominator.
+
+\pagebreak
+
+4. Referring to the results from the simulation study, what is the estimated probability of rejecting the null if the interaction HR is equal to 1.0? _A priori_ what would you expect the probability of rejecting the null to be when the true state is _HR_ = 1? Why? (10 points)
+
+The estimated probability of rejecting the null when the interaction ratio was equal to 1.0 and we set the type I error rate to be $\alpha = 0.05$ was `r est.power.05[[1]]`, or `r est.power.05[[1]]*100`%.  
+
+We expect the power, or the probability of rejecting the null, to equal $\alpha$ (here, 0.05) when the hazard ratio for the interaction equals one.  Why?  When the hazard ratio for the interaction equals one, the null hypothesis is true.  The type I error rate, $\alpha$, is by definition the probability of rejecting the null hypothesis when it is true.  Power, meanwhile, is by definition the probability of rejecting the null hypothesis at a particular type I error rate under a particular alternative hypothesis.  If the alternative hypothesis for which the estimated power calculation is done _is_ the null hypothesis, then the power calculation should return the probability of rejecting the null hypothesis when it is true, which is the $alpha$ we set to estimate the power in the first place.
+
+\pagebreak
+
+5. What is the HR for interaction that you would need to observe in order to have at least 80% power? If you wanted to be more precise in your estimate of the minimum effect size, explain briefly how you would modify the code to find the HR that gave you an answer closer to 80% (don’t provide code–just briefly describe what you would do in a few sentences). (10 points)
+
+These power calculations, done using data simulated for ratios for interaction $e^{\beta_3}$ ranging from 1 to 3 at intervals of 0.2, estimate that we would need to observe a ratio for interaction of at least 1.8, which would give us 89.5% power.  To more precisely estimate the minimum effect size, we could rewrite the code generating the vector of possible ratios for the interaction coefficient $e^{\beta_3}$ to make it sequence more finely between 1.6 and 1.8 (e.g., we could use intervals of 0.05, or even smaller).  If we wanted a certain precision and liked coding, we could also write a loop that would keep dividing the intervals more finely and rerunning the power calculation until the power was within some desired range of 80%.
+
+\pagebreak
+
+6. For this question, present the simultaneous plot of the two power curves. Compare the
+pattern of power for significance tests at the 5% and 10% level and explain what you see in a few sentences. Suggest a reason why you observe what you do. (5 points)
+
+```{r}
+
+# Create a table of results and output:
+power.table <- t(rbind(ratio.HR, est.power.05, est.power.10))
+kable(power.table,
+      col.names = c("Interaction HR",
+                    "Power @ 5% significance",
+                    "Power at 10% significance"))
+
+# Plot results.
+plot(ratio.HR, 
+     est.power.05, 
+     type="l",
+     main="Estimated Power for Interaction from Cox Model",
+     xlab="Min. detectable interaction HR", ylab="Power")
+
+lines(ratio.HR, est.power.10, lty=2)
+
+legend("bottomright",
+       legend=c("5% significance",
+                "10% significance"),
+       lty=1:2)
+
+```
+
+
+`{r ref.label=knitr::all_labels(), echo = T, eval = F}`
