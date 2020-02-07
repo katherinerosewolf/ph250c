@@ -2,12 +2,19 @@
 title: "R Assignment One"
 author: "Katherine Wolf"
 date: "January 24, 2020"
-output: 
-  pdf_document:
+output:
+    pdf_document:
+       includes:
+         in_header: preamble-latex.tex
+    html_document:
+       includes:
+         before_body: preamble-mathjax.tex
     latex_engine: xelatex
 mainfont: Calibri
-monofont: Lucida Console
 ---
+
+
+# Question One
 
 ```{r setup, include=FALSE}
 
@@ -22,6 +29,7 @@ knitr::opts_chunk$set(echo = FALSE,
 
 library(survival)
 library(knitr)
+library(rmarkdown)
 
 set.seed(8765432)
 N <- 500    # Number of events
@@ -120,81 +128,114 @@ ratio.HR <- exp(b3) # Transform interaction coefficients to ratio scale.
 ```
 
 
-# Questions
 
-*1. With mathematical notation, write out the statistical model you used to simulate the data for the power analysis given the assumptions listed above. Include: 1) The expression for the log-hazard function in terms of the covariates and parameters, and 2) specify the distribution of failure times given the hazard (general is fine). Clearly define all terms and parameters in the model. (15 points)*
+
+## With mathematical notation, write out the statistical model you used to simulate the data for the power analysis given the assumptions listed above. Include: 1) The expression for the log-hazard function in terms of the covariates and parameters, and 2) specify the distribution of failure times given the hazard (general is fine). Clearly define all terms and parameters in the model. (15 points)
 
 The expression for the log-hazard function is
 
-$log(h(t|\boldsymbol{x}, \boldsymbol{\beta})) =  log[h_0(t)] + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2$, where
+$log(h(t|\mathbf{x}, \bm{\beta})) =  log[h_0(t)] + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2$, where
 
-$log(h(t|\boldsymbol{x}, \boldsymbol{\beta}))$ is the natural logarithm of the instantaneous rate (hazard) of the event at time $t$ for a participant who has survived up to that time $t$, given the covariates in $\boldsymbol{x}$ and coefficients in $\boldsymbol{\beta}$;
+  * $log(h(t|\mathbf{x}, \bm{\beta}))$ is the natural logarithm of the instantaneous rate (hazard) of the event at time $t$ for a participant who has survived up to that time $t$, given the covariates in $\mathbf{x}$ and coefficients in $\bm{\beta}$;
 
-$log[h_0(t)]$ is the baseline instantaneous rate (hazard) of the event at time $t$ for a participant who had neither exposure, i.e., $x_1 = 0$ and $x_2 = 0$, and survived up to time $t$;
+  * $log[h_0(t)]$ is the baseline instantaneous rate (hazard) of the event at time $t$ for a participant who had neither exposure, i.e., $x_1 = 0$ and $x_2 = 0$, and survived up to time $t$;
 
-$\boldsymbol{x}$ is a vector of covariates containing
+  * $\mathbf{x}$ is a vector of covariates containing
 
-   + $x_1$, an indicator variable for the first binary exposure, with $x_1 = 1$ indicating that the participant was exposed and $x_1 = 0$ indicating that the participant was not exposed; and
+    + $x_1$, an indicator variable for the first binary exposure, with $x_1 = 1$ indicating that the participant was exposed and $x_1 = 0$ indicating that the participant was not exposed; and
    
-   + $x_2$, an indicator variable for the second binary exposure, with $x_2 = 1$ indicating that the participant was exposed and $x_2 = 0$ indicating that the participant was not exposed;
+    + $x_2$, an indicator variable for the second binary exposure, with $x_2 = 1$ indicating that the participant was exposed and $x_2 = 0$ indicating that the participant was not exposed;
    
-$\boldsymbol{\beta}$ is a vector of coefficients including
-    + $\beta_1$ is the log hazard ratio comparing the hazard of the event for a participant who had the first exposure, i.e., $x_1 = 1$, to the hazard of the event for a participant who did not, i.e., $x_1 = 0$, holding the values of all other variables constant;
-    + $\beta_2$ is the log hazard ratio comparing the hazard of the event for a participant who had the second exposure, i.e., $x_2 = 1$, to the hazard of the event for a participant who did not, i.e., $x_2 = 0$, holding the values of all other variables constant; and
-    + $\beta_3$ is the log of the ratio of hazard ratios, where
-       - the hazard ratio in the numerator compares the hazard of the event for a participant who had both exposures in its numerator, i.e., $x_1 = 1$ and $x_2 = 1$, to the hazard of the event for a participant who did not have one but still had the other in its denominator, i.e., either $x_1 = 1$ and $x_2 = 0$ or $x_1 = 0$ and $x_2 = 1$, and
-       - the hazard ratio in the denominator compares the hazard of the event for a participant who only had the other exposure not held constant above, i.e., $x_1 = 0$ and $x_2 = 1$ if both numerator and denominator above had the first exposure $x_1 = 1$, or $x_1 = 1$ and $x_2 = 0$ if both numerator and denominator above had the second exposure $x_2 = 1$, to the hazard of the event for a participant who had neither exposure in the denominator, i.e., $x_1 = 0$ and $x_2 = 0$.
+  * $\bm{\beta}$ is a vector of coefficients including
+
+    + $\beta_1$, the log hazard ratio comparing the hazard of the event for a participant who had the first exposure, i.e., $x_1 = 1$, in the numerator to the hazard of the event for a participant who did not, i.e., $x_1 = 0$, in the denominator, where neither of them had the second exposure, i.e., $x_2 = 0$ for both;
+    
+    + $\beta_2$, the log hazard ratio comparing the hazard of the event for a participant who had the second exposure, i.e., $x_2 = 1$, in the numerator to the hazard of the event for a participant who did not, i.e., $x_2 = 0$, in the denominator, where neither of them had the first exposure, i.e., $x_1 = 0$ for both;
+    
+    + $\beta_3$, the log of the ratio of hazard ratios, where
+    
+      - the hazard ratio in the numerator compares the hazard of the event for a participant who had both exposures in its numerator, i.e., $x_1 = 1$ and $x_2 = 1$, to the hazard of the event for a participant who had only one of the exposures in its denominator, i.e., either $x_1 = 1$ and $x_2 = 0$ or $x_1 = 0$ and $x_2 = 1$, and
+       
+      - the hazard ratio in the denominator compares the hazard of the event for a participant who only had the other exposure, i.e., $x_1 = 0$ and $x_2 = 1$ (if both nummerator and denominator above had the first exposure $x_1 = 1$) or $x_1 = 1$ and $x_2 = 0$ (if both numerator and denominator above had the second exposure $x_2 = 1$), to the hazard of the event for a participant who had neither exposure in the denominator, i.e., $x_1 = 0$ and $x_2 = 0$.
        
 The distribution of failure times is here assumed to be exponential, i.e., $f(t) = \lambda e^{\lambda t}$, where $\lambda = e^{\beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2}$.
 
 \pagebreak
 
-2. In terms of parameter(s) from the model outlined above, specify the null ($H_0$) and alternative $H_A$ hypotheses for a test of multiplicative interaction. (5 points) 
+# Question 2
 
-$H_0: \beta_3 = 0$ (or, equivalently, $e^{\beta_3} = 1$), i.e., the ratio of the hazard ratios described above to define $\beta_3$ equals one.
+## In terms of parameter(s) from the model outlined above, specify the null ($H_0$) and alternative ($H_A$) hypotheses for a test of multiplicative interaction. (5 points)
 
-$H_1: \beta_3 \neq 0$ (or, equivalently, $e^{\beta_3} \neq 1$), i.e., the ratio of the hazard ratios described above to define $\beta_3$ is not equal to one.
+$H_0: \beta_3 = 0$ (or, equivalently, $e^{\beta_3} = 1$), i.e., the null hypothesis is that the ratio of the hazard ratios described above to define $\beta_3$ equals one and indicates an absence of multiplicative interaction between the exposures.
 
-\pagebreak
-
-3. Briefly (1 sentence) interpret the *HR* for the interaction term in the above model (generally, referencing $X_1$  and $X_2$). (5 points)
-
-The ratio of hazard ratios for the interaction term in the above model ($e^{\beta_3}$) compares the hazard ratio comparing a participant with both exposures in the numerator to only one in the denominator to the hazard ratio for a participant with only the other exposure in the numerator to neither exposure in the denominator.
+$H_1: \beta_3 \neq 0$ (or, equivalently, $e^{\beta_3} \neq 1$), i.e., the alternative hypothesis is that the ratio of the hazard ratios described above to define $\beta_3$ is not equal to one, i.e., multiplicative interaction exists between the exposures.
 
 \pagebreak
 
-4. Referring to the results from the simulation study, what is the estimated probability of rejecting the null if the interaction HR is equal to 1.0? _A priori_ what would you expect the probability of rejecting the null to be when the true state is _HR_ = 1? Why? (10 points)
+# Question 3
+
+## Briefly (1 sentence) interpret the *HR* for the interaction term in the above model (generally, referencing $X_1$  and $X_2$). (5 points)
+
+The ratio of hazard ratios for the interaction term in the above model ($e^{\beta_3}$) compares 
+
+  * the hazard ratio in the meta-numerator, which compares the hazard of the event for a participant who had both exposures in its numerator, i.e., $x_1 = 1$ and $x_2 = 1$, to the hazard of the event for a participant who had only one of the exposures in its denominator, i.e., either $x_1 = 1$ and $x_2 = 0$ or $x_1 = 0$ and $x_2 = 1$, and
+       
+  * the hazard ratio in the meta-denominator, which compares the hazard of the event for a participant who only had the other exposure, i.e., $x_1 = 0$ and $x_2 = 1$ (if both nummerator and denominator above had the first exposure $x_1 = 1$) or $x_1 = 1$ and $x_2 = 0$ (if both numerator and denominator above had the second exposure $x_2 = 1$), to the hazard of the event for a participant who had neither exposure in the denominator, i.e., $x_1 = 0$ and $x_2 = 0$; 
+  
+  in other words, the ratio of the interaction terms gives the change (multiplicative interaction) in the hazard for a participant who had both exposures compared to a participant who had only one, beyond the change expected from multiplying the individual exposure effects.
+
+\pagebreak
+
+# Question 4
+
+## Referring to the results from the simulation study, what is the estimated probability of rejecting the null if the interaction HR is equal to 1.0? _A priori_ what would you expect the probability of rejecting the null to be when the true state is _HR_ = 1? Why? (10 points)
 
 The estimated probability of rejecting the null when the interaction ratio was equal to 1.0 and we set the type I error rate to be $\alpha = 0.05$ was `r est.power.05[[1]]`, or `r est.power.05[[1]]*100`%.  
 
-We expect the power, or the probability of rejecting the null, to equal $\alpha$ (here, 0.05) when the hazard ratio for the interaction equals one.  Why?  When the hazard ratio for the interaction equals one, the null hypothesis is true.  The type I error rate, $\alpha$, is by definition the probability of rejecting the null hypothesis when it is true.  Power, meanwhile, is by definition the probability of rejecting the null hypothesis at a particular type I error rate under a particular alternative hypothesis.  If the alternative hypothesis for which the estimated power calculation is done _is_ the null hypothesis, then the power calculation should return the probability of rejecting the null hypothesis when it is true, which is the $alpha$ we set to estimate the power in the first place.
+We expect the power, or the probability of rejecting the null, to equal the predetermined type I error rate $\alpha$ (here, 0.05 or 5%) when the hazard ratio for the interaction equals one.  Why?
+
+The type I error rate, $\alpha$, is by definition the probability of rejecting the null hypothesis when it is true.  
+
+Power, essentially, is, given a particular $\alpha$ and a particular alternative hypothesis, the probability of rejecting the null hypothesis when the alternative hypothesis is true.
+
+If the ratio of hazard ratios for the interaction equals one, then the null hypothesis is true.  Thus calculating via simulation the power, given a particular $\alpha$, to detect a ratio of one effectively sets the alternative hypothesis to be the null hypothesis.  Thus the power calculation, in returning the probability of rejecting the null hypothesis when the alternative hypothesis is true as designed, will return the probabilty of rejecting the null hypothesis when it is true, which is definition of the $alpha$ we set to estimate the power in the first place.
 
 \pagebreak
 
-5. What is the HR for interaction that you would need to observe in order to have at least 80% power? If you wanted to be more precise in your estimate of the minimum effect size, explain briefly how you would modify the code to find the HR that gave you an answer closer to 80% (don’t provide code–just briefly describe what you would do in a few sentences). (10 points)
+# Question 5
 
-These power calculations, done using data simulated for ratios for interaction $e^{\beta_3}$ ranging from 1 to 3 at intervals of 0.2, estimate that we would need to observe a ratio for interaction of at least 1.8, which would give us 89.5% power.  To more precisely estimate the minimum effect size, we could rewrite the code generating the vector of possible ratios for the interaction coefficient $e^{\beta_3}$ to make it sequence more finely between 1.6 and 1.8 (e.g., we could use intervals of 0.05, or even smaller).  If we wanted a certain precision and liked coding, we could also write a loop that would keep dividing the intervals more finely and rerunning the power calculation until the power was within some desired range of 80%.
+## What is the HR for interaction that you would need to observe in order to have at least 80% power? If you wanted to be more precise in your estimate of the minimum effect size, explain briefly how you would modify the code to find the HR that gave you an answer closer to 80% (don’t provide code–just briefly describe what you would do in a few sentences). (10 points)
 
-\pagebreak
-
-6. For this question, present the simultaneous plot of the two power curves. Compare the
-pattern of power for significance tests at the 5% and 10% level and explain what you see in a few sentences. Suggest a reason why you observe what you do. (5 points)
+These power calculations (see the table below), done using data simulated for ratios for interaction $e^{\beta_3}$ ranging from 1 to 3 at intervals of 0.2, estimate that we would need to observe a ratio for interaction of at least 1.8 at 5% significance, which would give us 89.5% power, or of at least 1.6 at 10% significance, which would give us 83.5% power.  To more precisely estimate the minimum effect size, we could rewrite the code generating the vector of possible ratios for the interaction coefficient $e^{\beta_3}$ to make it use intervals smaller than 0.2 between 1.6 and 1.8 for the 5% significance level (or between 1.4 and 1.6 at the 10% significance level).  If we wanted a certain precision and liked coding, we could also write a loop that would keep dividing the intervals more finely and rerunning the simulation until it found a minimum ratio for the interaction that had a power above but within a pre-designated tolerance of 80%.
 
 ```{r}
 
 # Create a table of results and output:
 power.table <- t(rbind(ratio.HR, est.power.05, est.power.10))
 kable(power.table,
-      col.names = c("Interaction HR",
+      col.names = c("Interaction hazard ratio",
                     "Power @ 5% significance",
-                    "Power at 10% significance"))
+                    "Power at 10% significance"), 
+      caption = "Simulated power to detect interaction at 5% and 10% significance levels.")
+
+```
+
+
+\pagebreak
+
+# Question 6
+
+## For this question, present the simultaneous plot of the two power curves. Compare the pattern of power for significance tests at the 5% and 10% level and explain what you see in a few sentences. Suggest a reason why you observe what you do. (5 points)
+
+```{r}
 
 # Plot results.
 plot(ratio.HR, 
      est.power.05, 
      type="l",
      main="Estimated Power for Interaction from Cox Model",
-     xlab="Min. detectable interaction HR", ylab="Power")
+     xlab="Min. detectable interaction HR", 
+     ylab="Power")
 
 lines(ratio.HR, est.power.10, lty=2)
 
@@ -205,5 +246,14 @@ legend("bottomright",
 
 ```
 
+The simulated power to detect an interaction rises and asymptotically approaches one as the minimum detectable interaction ratio rises.  The power to detect the interaction appears lower at the $\alpha = 5\%$ significance level than at the $\alpha = 10\%$ significance level for all minimum detectable ratios until 2.6, when neither power is distinguishable at three decimal places from one.
 
-`{r ref.label=knitr::all_labels(), echo = T, eval = F}`
+The power rises as the minimum detectable interaction ratio rises because, as the ratio rises, the distribution generated by sampling from a distribution with the interaction ratio as its true mean moves away from the distribution generated by sampling from a distribution with the null interaction ratio (which equals 1) as its true mean.  Thus, a smaller proportion of the values in the sampling distribution around the alternative hypothesis interaction ratio overlap "fail to reject the null" range of the sampling distribution around the hypothetical null interaction ratio, increasing the probability of rejecting the null when the alternative hypothesis is true, where that exact probability is by definition the power of the test.
+
+The simulated power is systemically higher at the $\alpha = 10\%$ than at the $\alpha = 5\%$ significance level because setting the $\alpha$ essentially sets the frequency with which one rejects the null, whereas power essentially measures the frequency of rejecting the null when the alternative hypothesis is true.  Per the central limit theorem, drawing repeated samples from a distribution with a true mean, as this simulation does for the simulated "true" interaction ratio, will eventually yield a normal distribution of sample values around that true mean. In that case, increasing the significance level (here, from 5% to 10%) when the alternative hypothesis is actually true, in increasing the frequency of rejecting the null, increases the proportion of the alternative hypothesis sampling distribution that falls in the null-rejection range.  As that proportion is by definition the power of the test, the power to detect the interaction ratio is increased at increased values of $\alpha$.
+
+\pagebreak
+
+# Appendix: R code
+
+```{r ref.label=knitr::all_labels(), echo = T, eval = F}

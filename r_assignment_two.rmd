@@ -1,0 +1,145 @@
+---
+title: "R Assignment Two"
+author: "Katherine Wolf"
+date: "February 7, 2020"
+output:
+    pdf_document:
+       includes:
+         in_header: preamble-latex.tex
+    html_document:
+       includes:
+         before_body: preamble-mathjax.tex
+    latex_engine: xelatex
+mainfont: Calibri
+monofont: Lucida Console
+---
+
+
+# Question One
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+
+```
+
+
+```{r load required packages and read data}
+
+library(foreign)
+library(boot)
+load("frmgham_recoded.wide.Rdata")
+
+```
+
+```{r}
+
+# Make 2nd category (BMI 18.5-24.9, ideal weight) the referent group:
+frmgham_recoded.wide$bmi_cat <- 
+  relevel(as.factor(frmgham_recoded.wide$bmi_cat),"2")
+
+```
+
+
+
+```{r}
+
+standardized.measures <- function(dataset, index){
+  # Create resampled version of dataset using index vector:
+  dataset.resampled <- dataset[index,];
+
+  # Fit logistic regression from the resampled dataset:
+  # Outcome: hyperten
+  # Covariates: bmi_cat, cursmoke, age, sex, educ
+  # Store results in object called logistic.frmgham
+  
+  logistic.frmgham <- ##### COMPLETE ON OWN 
+    glm(hyperten ~ bmi_cat + cursmoke + age + sex + educ,
+        data = dataset.resampled, 
+        family = binomial(link = "logit"))
+  
+  ##### end complete on own
+  
+  ### To calculate the measures of association:
+
+  # STEP 1: Create two new versions of the *original* dataset, called
+  # frmgham_recoded.wide.obese and frmgham_recoded.wide.ideal
+  frmgham_recoded.wide.obese <- 
+    frmgham_recoded.wide.ideal <- 
+    frmgham_recoded.wide
+
+  # Set BMI to obese (category 4) in population 1 [exposed]
+  # and ideal weight (category 2) in population 0 [unexposed]:
+  frmgham_recoded.wide.obese$bmi_cat <- 4 # population w/ all obese
+  frmgham_recoded.wide.ideal$bmi_cat <- 2 # population w/ all ideal weight
+
+  # STEP 2: Obtain predicted individual risk of hypertension under each new dataset:
+  rhat.obese <- predict(logistic.frmgham, type="response",
+                        newdata =frmgham_recoded.wide.obese)
+  rhat.ideal <- predict(logistic.frmgham, type="response",
+                        newdata=frmgham_recoded.wide.ideal)
+
+  # STEP 3: Calculate the average risk (proportion) of hypertension
+  # in each hypothetical population:
+  risk.obese <- mean(rhat.obese)
+  risk.ideal <- mean(rhat.ideal)
+  
+  # Calculate risk difference and risk ratio using ideal weight as reference:
+  rd <- ##### COMPLETE ON OWN
+    rr <- ##### COMPLETE ON OWN
+
+  # STEP 4: Return these estimates:
+  return(c(rd, rr))
+}
+
+```
+
+
+
+
+```{r}
+
+n.frmgham <- nrow(frmgham_recoded.wide)
+stdized.measures <- standardized.measures(frmgham_recoded.wide, 
+                                          index=seq(1:n.frmgham))
+stdized.rd <- stdized.measures[1] # Risk difference is 1st element
+stdized.rr <- stdized.measures[2] # Risk ratio is 2nd element
+
+```
+
+
+
+```{r}
+
+set.seed(123)
+# Put the bootstrapped sample results into object called bs.standardized
+bs.standardized <- boot(frmgham_recoded.wide, standardized.measures, 5000)
+boot.ci(bs.standardized, type= "bca", index=1)
+boot.ci(bs.standardized, type= "bca", index=2)
+
+
+```
+
+
+```{r}
+
+rd.samples <- bs.standardized$t[,1]
+rr.samples <- bs.standardized$t[,2]
+
+par(mfrow=c(2,1))
+plot(density(rd.samples), main = "Bootstraped Samples of Risk Difference")
+plot(density(rr.samples), main = "Bootstraped Samples of Risk Ratio")
+par(mfrow=c(1,1))
+
+```
+
+
+
+# Appendix: R code
+
+```{r ref.label=knitr::all_labels(), echo = T, eval = F}
+
+```
+
