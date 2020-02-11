@@ -1,7 +1,7 @@
 ---
 title: "R Assignment Two"
 author: "Katherine Wolf"
-date: "February 7, 2020"
+date: "February 11, 2020"
 output:
     pdf_document:
        includes:
@@ -13,9 +13,6 @@ output:
 mainfont: Calibri
 monofont: Lucida Console
 ---
-
-
-# Question One
 
 ```{r setup, include=FALSE}
 
@@ -39,6 +36,10 @@ load("frmgham_recoded.wide.Rdata")
 # Make 2nd category (BMI 18.5-24.9, ideal weight) the referent group:
 frmgham_recoded.wide$bmi_cat <- 
   relevel(as.factor(frmgham_recoded.wide$bmi_cat),"2")
+
+```
+
+```{r}
 
 ```
 
@@ -72,13 +73,13 @@ standardized.measures <- function(dataset, index){
 
   # Set BMI to obese (category 4) in population 1 [exposed]
   # and ideal weight (category 2) in population 0 [unexposed]:
-  frmgham_recoded.wide.obese$bmi_cat <- 4 # population w/ all obese
-  frmgham_recoded.wide.ideal$bmi_cat <- 2 # population w/ all ideal weight
+  frmgham_recoded.wide.obese$bmi_cat <- "4" # population w/ all obese
+  frmgham_recoded.wide.ideal$bmi_cat <- "2" # population w/ all ideal weight
 
   # STEP 2: Obtain predicted individual risk of hypertension under each new dataset:
-  rhat.obese <- predict(logistic.frmgham, type="response",
-                        newdata =frmgham_recoded.wide.obese)
-  rhat.ideal <- predict(logistic.frmgham, type="response",
+  rhat.obese <- predict(logistic.frmgham, type = "response",
+                        newdata = frmgham_recoded.wide.obese)
+  rhat.ideal <- predict(logistic.frmgham, type = "response",
                         newdata=frmgham_recoded.wide.ideal)
 
   # STEP 3: Calculate the average risk (proportion) of hypertension
@@ -87,8 +88,8 @@ standardized.measures <- function(dataset, index){
   risk.ideal <- mean(rhat.ideal)
   
   # Calculate risk difference and risk ratio using ideal weight as reference:
-  rd <- ##### COMPLETE ON OWN
-    rr <- ##### COMPLETE ON OWN
+  rd <- risk.obese - risk.ideal
+  rr <- risk.obese/risk.ideal
 
   # STEP 4: Return these estimates:
   return(c(rd, rr))
@@ -125,17 +126,55 @@ boot.ci(bs.standardized, type= "bca", index=2)
 
 ```{r}
 
-rd.samples <- bs.standardized$t[,1]
-rr.samples <- bs.standardized$t[,2]
+rd.samples <- bs.standardized$t[,1]  # risk difference
+rr.samples <- bs.standardized$t[,2]  # risk ratio
 
 par(mfrow=c(2,1))
-plot(density(rd.samples), main = "Bootstraped Samples of Risk Difference")
-plot(density(rr.samples), main = "Bootstraped Samples of Risk Ratio")
+plot(density(rd.samples), main = "Bootstrapped Samples of Risk Difference")
+plot(density(rr.samples), main = "Bootstrapped Samples of Risk Ratio")
 par(mfrow=c(1,1))
 
 ```
 
 
+```{r on my own pretending}
+
+# Calculate the standard deviation of each of the series of bootstrapped samples obtained in the above code chunk (use the log-scale for the relative measure). Calculate these centered on the original point estimate (not the sample means).
+
+sd.rd.boot <- sd(rd.samples - stdized.rd)
+
+sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))
+
+
+# Use these estimates of standard deviation to calculate 95% confidence intervals for the RD and RR using a Normal approximation approach (see slide 12 from lecture notes). (Hint: make sure to do the CI calculation for the RR on the log scale and transform back to ratio scale.)
+
+rd.ci.norm.apx <- c(stdized.rd - 1.96*sd.rd.boot, 
+                    stdized.rd + 1.96*sd.rd.boot)
+
+log.rr.ci.norm.apx <- c(log(stdized.rr) - 1.96*sd.log.rr.boot, 
+                        log(stdized.rr) + 1.96*sd.log.rr.boot)
+
+rr.ci.norm.apx <- exp(log.rr.ci.norm.apx)
+
+```
+
+# Question One
+
+## State the point estimate and 95% confidence interval for the estimated risk difference and risk ratio for this analysis (20 points)
+
+The estimated risk difference is `r stdized.rd` with a 95% confidence interval of ``
+
+# Question Two
+
+## Turn in the density plots for the risk difference and risk ratio measures. Briefly describe the pattern that you see. Does the pattern seem to indicate that the sampling distribution of the RD and RR are approximately normal? (10 points)
+
+# Question Three
+
+## Showing your work, calculate the 95% CI for the risk difference using a Normal approximation, and report your answer. (Show the formula you used, and the specific values that went into your calculation.) What assumptions does this require? How does this compare to the results from question one? (10 points)
+
+# Question Four
+
+## Showing your work, calculate the 95% CI for the risk ratio, and report your answer. (Show the formula you used, and the specific values that went into your calculation.) What assumptions does this require? How does this compare to the results from question one? (10 points)
 
 # Appendix: R code
 
