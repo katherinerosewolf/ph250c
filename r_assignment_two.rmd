@@ -141,7 +141,7 @@ sd.rd.boot <- sd(rd.samples - stdized.rd)
 sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))
 
 
-# Use these estimates of standard deviation to calculate 95% confidence intervals for the RD and RR using a Normal approximation approach (see slide 12 from lecture notes). (Hint: make sure to do the CI calculation for the RR on the log scale and transform back to ratio scale.)
+# Use these estimates of standard deviation to calculate 95 confidence intervals for the RD and RR using a Normal approximation approach (see slide 12 from lecture notes). (Hint: make sure to do the CI calculation for the RR on the log scale and transform back to ratio scale.)
 
 rd.ci.norm.apx <- c(stdized.rd - 1.96*sd.rd.boot, 
                     stdized.rd + 1.96*sd.rd.boot)
@@ -232,7 +232,7 @@ The density plots for the bootstrapped samples of the risk difference and the ri
 
 To calculate the normal approximation, I used the formula
 
-$$\hat{\theta} \pm 1.96*SE_{\hat{\theta}_i}$$
+$$ \hat{\theta} \pm 1.96*SE_{\hat{\theta}_i} $$
 
 
 
@@ -242,27 +242,24 @@ The 95% confidence interval for the risk difference using a normal approximation
 
 ## Showing your work, calculate the 95% confidence interval for the risk ratio, and report your answer. (Show the formula you used, and the specific values that went into your calculation.) What assumptions does this require? How does this compare to the results from question one? (10 points)
 
-To simplify notation, let the point estimate of the cumulative incidence ratio derived via model-based standardization, $\hat{RR}$, be denoted by $\hat{\theta}$, and let each estimate of the cumulative incidence ratio derived from a bootstrap sample of the original data from be denoted by $\hat{\theta}_i$.
+To simplify notation, let the point estimate of the cumulative incidence ratio derived via model-based standardization, $\hat{RR}$, be denoted by $\hat{\theta}$, and let each estimate of the cumulative incidence ratio derived from a bootstrap sample of the original data from be denoted by $\hat{\theta}_i$ .
 
-To calculate the 95% confidence interval using a normal approximation, I first calculated the mean of the differences between the model-standardized point estimate of the cumulative incidence ratio and bootstrapped point estimates of the cumulative incidence ratio, to which I will refer as $\overline{\Delta_\hat{\theta_i}}$:
+To calculate the 95% confidence interval using a normal approximation, I first calculated the mean of the differences between the model-standardized point estimate of the cumulative incidence ratio and bootstrapped point estimates of the cumulative incidence ratio:
 
 $$
-
 \overline{\Delta_{ln(\hat{\theta_i})}} = \frac{\sum\limits_{i = 1}^{n}(\ln(\hat{\theta}_i )-\ln(\hat{\theta}))}{n}
-
 $$
 
 I then used that mean to calculate the standard deviation of the differences between the log bootstrap sample CIR estimates and the log model-standardized CIR estimate to estimate the standard error of those differences: 
 
 $$
-
-SE_{\ln(\hat{\theta}_i)} \approx \sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) -
-
-\overline{\Delta_{ln(\hat{\theta_i})}}\right)^2}
-
+SE_{\ln(\hat{\theta}_i)} 
+\approx 
+\sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) - \overline{\Delta_{ln(\hat{\theta_i})}}\right)^2}
 $$
 
-(To be honest, I did all of the above steps using the simple R code `sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))`.)
+(To be honest, I did all of the above steps using the simple R code 
+`sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))`.)
 
 I then calculated 
 

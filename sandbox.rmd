@@ -1,0 +1,30 @@
+---
+title: "R Assignment Two"
+author: "Katherine Wolf"
+date: "February 11, 2020"
+output:
+    pdf_document:
+       includes:
+         in_header: preamble-latex.tex
+    html_document:
+       includes:
+         before_body: preamble-mathjax.tex
+    latex_engine: xelatex
+mainfont: Calibri
+monofont: Lucida Console
+---
+
+I then used that mean to calculate the standard deviation of the differences between the log bootstrap sample CIR estimates and the log model-standardized CIR estimate to estimate the standard error of those differences: 
+
+```{r}
+
+library(foreign)
+
+```
+
+
+$$
+SE_{ln(\hat{\theta}_i)} 
+\approx 
+\sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) - \bar\Delta_{ln(\hat{\theta_i})}\right)^2}
+$$
