@@ -31,6 +31,7 @@ load("frmgham_recoded.wide.Rdata")
 
 ```
 
+
 ```{r}
 
 # Make 2nd category (BMI 18.5-24.9, ideal weight) the referent group:
@@ -38,11 +39,6 @@ frmgham_recoded.wide$bmi_cat <-
   relevel(as.factor(frmgham_recoded.wide$bmi_cat),"2")
 
 ```
-
-```{r}
-
-```
-
 
 
 ```{r}
@@ -117,8 +113,8 @@ stdized.rr <- stdized.measures[2] # Risk ratio is 2nd element
 set.seed(123)
 # Put the bootstrapped sample results into object called bs.standardized
 bs.standardized <- boot(frmgham_recoded.wide, standardized.measures, 5000)
-boot.ci(bs.standardized, type= "bca", index=1)
-boot.ci(bs.standardized, type= "bca", index=2)
+ci.rd.bca <- boot.ci(bs.standardized, type= "bca", index=1)
+ci.rr.bca <- boot.ci(bs.standardized, type= "bca", index=2)
 
 
 ```
@@ -162,7 +158,9 @@ rr.ci.norm.apx <- exp(log.rr.ci.norm.apx)
 
 ## State the point estimate and 95% confidence interval for the estimated risk difference and risk ratio for this analysis (20 points)
 
-The estimated risk difference is `r stdized.rd` with a 95% confidence interval of ``
+The estimated risk difference is `r stdized.rd` (95% confidence interval: (`r round(ci.rd.bca$bca[4], 2)`, `r round(ci.rd.bca$bca[5], 2)`).
+
+The estimated risk ratio is `r stdized.rr` (95% confidence interval: (`r round(ci.rr.bca$bca[4], 2)`, `r round(ci.rr.bca$bca[5], 2)`).
 
 # Question Two
 
