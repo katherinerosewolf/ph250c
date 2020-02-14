@@ -22,9 +22,11 @@ library(foreign)
 
 ```
 
-
 $$
-SE_{ln(\hat{\theta}_i)} 
-\approx 
-\sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) - \bar\Delta_{ln(\hat{\theta_i})}\right)^2}
+\begin{aligned}
+SE_{\ln(\hat{\theta}_i)} 
+\approx sd(\ln(\hat{\theta}_i) - \ln(\hat{\theta})) = \\ 
+\sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) - \overline{\Delta_{ln(\hat{\theta_i})}}\right)^2} = \\ 
+\sqrt{\frac{1}{5000-1} \sum\limits_{i = 1}^{5000}\left(\left(\ln(\hat{\theta}_i)-0.32785\right) - (-0.00108)\right)}
+\end{aligned}
 $$
