@@ -154,17 +154,21 @@ rr.ci.norm.apx <- exp(log.rr.ci.norm.apx)
 
 # Question One
 
-## State the point estimate and 95% confidence interval for the estimated risk difference and risk ratio for this analysis (20 points)
+## State the point estimate and 95% confidence interval (CI) for the estimated risk difference (RD) and risk ratio (RR) for this analysis. (20 points)
 
-The estimated standardized risk (cumulative incidence) difference, comparing the modeled cumulative incidence of hypertension over the study period in a hypothetical study population in which everyone is obese to that in a hypothetical study population in which everyone is "ideal" weight, is `r round(stdized.rd, 3)` (95% confidence interval: `r round(ci.rd.bca$bca[4], 3)`, `r round(ci.rd.bca$bca[5], 3)`). (The confidence interval is calculated around the original standardized point estimate for the risk difference using the bias-corrected and accelerated method in the `boot` R package.)
+The point estimate for the estimated risk (cumulative incidence) difference derived using model-based standardization,[^1] which compares the modeled cumulative incidence of hypertension over the study period in a hypothetical study population in which everyone is obese to that in a hypothetical study population in which everyone is "ideal" weight, is `r round(stdized.rd, 3)` (95% CI: `r round(ci.rd.bca$bca[4], 3)`, `r round(ci.rd.bca$bca[5], 3)`).[^2] 
 
-The estimated standardized risk (cumulative incidence) ratio, comparing the modeled cumulative incidence of hypertension over the study period in a hypothetical study population in which everyone is obese to that in a hypothetical study population in which everyone is "ideal" weight, is `r round(stdized.rr, 3)` (95% confidence interval: `r round(ci.rr.bca$bca[4], 3)`, `r round(ci.rr.bca$bca[5], 3)`). (The confidence interval is calculated around the original standardized point estimate for the risk ratio using the bias-corrected and accelerated method via the `boot` package.)
+The point estimate for the estimated risk (cumulative incidence) ratio (RR) derived using model-based standardization, which compares the modeled cumulative incidence of hypertension over the study period in a hypothetical study population in which everyone is obese to that in a hypothetical study population in which everyone is "ideal" weight, is `r round(stdized.rr, 3)` (95% CI: `r round(ci.rr.bca$bca[4], 3)`, `r round(ci.rr.bca$bca[5], 3)`).
+
+[^1]: Greenland S. Model-based Estimation of Relative Risks and Other Epidemiologic Measures in Studies of Common Outcomes and in Case-Control Studies. Am J Epidemiol 2004;160(4):301–5. doi:10.1093/aje/kwh221.
+
+[^2]: I calculated the CIs around the model-standardized point estimates of the RD and the RR using the bias-corrected and accelerated method in the `boot` R package, which corrects for both (1) the potential difference between the mean of all the bootstrap-sample-derived point estimates used to construct the 95% CI and the point estimate calculated from the original dataset, caused by asymmetry in the sampling distribution (the "bias-corrected" piece), as well as (2) changes in skewness in the distribution that vary with the value of the estimated parameter (the "accelerated" piece). See Carpenter J, Bithell J. Bootstrap confidence intervals: when, which, what? A practical guide for medical statisticians. Statistics in Medicine 2000;19(9):1141–1164. doi:10.1002/(SICI)1097-0258(20000515)19:9<1141::AID-SIM479>3.0.CO;2-F. (Page 1154.)
 
 \pagebreak
 
 # Question Two
 
-## Turn in the density plots for the risk difference and risk ratio measures. Briefly describe the pattern that you see. Does the pattern seem to indicate that the sampling distribution of the RD and RR are approximately normal? (10 points)
+## Turn in the density plots for the risk difference (RD) and risk ratio (RR) measures. Briefly describe the pattern that you see. Does the pattern seem to indicate that the sampling distribution of the RD and RR are approximately normal? (10 points)
 
 ```{r}
 
@@ -176,7 +180,7 @@ par(mfrow=c(1,1))
 
 ```
 
-The density plots for the sampling distributions for the risk difference and the risk ratio drawn from bootstrapped samples of the data look normal and centered close to the point estimates from question one, as does the density plot for the sampling distribution of the natural logarithm of the risk ratio.  Thus we can likely use normal approximations to calculate 95% confidence intervals for both the risk difference and the logarithm of the risk ratio. (I don't quite understand why the original assignment had us look at a density plot for the sampling distribution of the risk ratio if we're calculating 95% confidence intervals on the scale of the predictors, which corresponds to the natural logarithm of the risk ratio.)
+The density plots for the sampling distributions for the RD and the RR drawn from bootstrapped samples of the data look normal and centered close to the point estimates from question one, as does the density plot for the sampling distribution of the natural logarithm of the RR.  Thus we can likely use normal approximations to calculate 95% CIs for both the RD and the logarithm of the RR. (I don't quite understand why the original assignment had us look at a density plot for the sampling distribution of the RR if we're calculating 95% CIs on the scale of the predictors, which corresponds to the natural logarithm of the RR.)
 
 \pagebreak
 
@@ -225,21 +229,21 @@ The density plots for the sampling distributions for the risk difference and the
 
 ```
 
-## Showing your work, calculate the 95% confidence interval for the risk difference using a normal approximation, and report your answer. (Show the formula you used, and the specific values that went into your calculation.) What assumptions does this require? How does this compare to the results from question one? (10 points)
+## Showing your work, calculate the 95% confidence interval for the risk difference (RD) using a normal approximation, and report your answer. (Show the formula you used, and the specific values that went into your calculation.) What assumptions does this require? How does this compare to the results from question one? (10 points)
 
 To simplify notation:
 
-* Let the point estimate of the risk difference derived via model-based standardization, $\hat{RD}$, be denoted by $\hat{\theta}$; 
+* Let the point estimate of the RD derived via model-based standardization, $\hat{RD}$, be denoted by $\hat{\theta}$; 
 * Let $n$ denote the number of bootstrapped samples indexed by $i$ (here from $i = 1$ to $i = 5000$); and
-* Let each estimate of the model-standardized risk difference derived from a bootstrap sample of the original data be denoted by $\hat{\theta}_i$.
+* Let each estimate of the model-standardized RD derived from a bootstrap sample of the original data be denoted by $\hat{\theta}_i$.
 
-To calculate the 95% confidence interval for the model-standardized estimate of the risk difference using the Wald normal approximation
+To calculate the 95% CI for the model-standardized estimate of the RD using the Wald normal approximation
 
 $$ \hat{\theta} \pm 1.96 \times SE_{\hat{\theta}_i}, $$
 
 ### Step One
 
-I first calculated the mean of the differences between the original model-standardized point estimate of the risk difference $\hat{\theta} = `r round(stdized.rd, 5)`$ and the bootstrapped point estimates of the model-standardized risk difference $\hat{\theta}_i$, $\overline{\Delta_{\hat{\theta_i}}}$:
+I first calculated the mean of the differences between the original model-standardized point estimate of the RD $\hat{\theta} = `r round(stdized.rd, 5)`$ and the bootstrapped point estimates of the model-standardized RD $\hat{\theta}_i$, $\overline{\Delta_{\hat{\theta_i}}}$:
 
 $$
 \overline{\Delta_{\hat{\theta_i}}} = \frac{\sum\limits_{i = 1}^{n}(\hat{\theta}_i-\hat{\theta})}{n} = 
@@ -265,7 +269,7 @@ $$
 
 ### Step Three
 
-I calculated the Wald 95% confidence interval (CI) for the risk difference using the estimated standard error above:
+I calculated the Wald 95% CI for the RD using the estimated standard error above:
 
 $$
 95\% \space CI_{\hat{\theta}} = 
@@ -275,88 +279,13 @@ $$
 
 ### Assumptions
 
-### Comparison to the bias-corrected and accelerated confidence interval
-
-The 95% confidence interval for the risk difference using a normal approximation is (`r round(rd.ci.norm.apx[1], 3)`, `r round(rd.ci.norm.apx[2], 3)`), compared to the bias-corrected and accelerated confidence interval of (`r round(ci.rd.bca$bca[4], 3)`, `r round(ci.rd.bca$bca[5], 3)`).
-
-\pagebreak
-
-# Question Four
-
-## Showing your work, calculate the 95% confidence interval for the risk ratio, and report your answer. (Show the formula you used, and the specific values that went into your calculation.) What assumptions does this require? How does this compare to the results from question one? (10 points)
-
-To simplify notation:
-
-* Let the point estimate of the risk ratio derived via model-based standardization, $\hat{RR}$, be denoted by $\hat{\theta}$; 
-* Let $n$ denote the number of bootstrapped samples indexed by $i$ (here from $i = 1$ to $i = 5000$); and
-* Let each estimate of the model-standardized risk ratio derived from a bootstrap sample of the original data be denoted by $\hat{\theta}_i$.
-
-```{r results=FALSE}
-
-log(stdized.rr)
-
-mean(log(rr.samples) - log(stdized.rr))
-
-```
-
-To calculate the 95% confidence interval for the model-standardized estimate of the risk ratio using the Wald normal approximation
-
-$$ \hat{\theta} \pm 1.96 \times SE_{\hat{\theta}_i}, $$
-
-### Step One
-
-I first calculated the mean of the differences between the natural logarithm of the original model-standardized point estimate of the risk ratio $\ln(\hat{\theta}) = \ln(`1.388`) = 0.328$ and the natural logarithms of the bootstrapped point estimates of the model-standardized risk ratio, $\overline{\Delta_{ln(\hat{\theta_i})}}$:
-
-$$
-\overline{\Delta_{ln(\hat{\theta_i})}} = \frac{\sum\limits_{i = 1}^{n}(\ln(\hat{\theta}_i )-\ln(\hat{\theta}))}{n} = 
-\frac{\sum\limits_{i = 1}^{5000}(\ln(\hat{\theta}_i )-0.32785)}{5000} = -0.00108
-$$
-
-### Step Two
-
-I used that mean $\overline{\Delta_{\ln(\hat{\theta_i})}}$ to calculate the sample standard deviation of the differences between the $\ln(\hat{\theta}_i)$s and $\ln(\hat{\theta})$, as the best possible estimate of the standard error of that estimate, ($SE_{\ln(\hat{\theta}_i)}$): 
-
-$$
-\begin{aligned}
-SE_{\ln(\hat{\theta}_i)} 
-\approx sd(\ln(\hat{\theta}_i) - \ln(\hat{\theta})) &=  
-\sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) - \overline{\Delta_{\ln(\hat{\theta_i})}}\right)^2} \\ 
-&= \sqrt{\frac{1}{5000-1} \sum\limits_{i = 1}^{5000}\left(\left(\ln(\hat{\theta}_i)-0.32785\right) - (-0.00108)\right)^2} = 
-`r round(sd.log.rr.boot, 3)`
-\end{aligned}
-$$
-
-(Note: I did both steps one and two using the R one-liner `sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))`.)
-
-### Step Three
-
-I calculated the Wald 95% confidence interval (CI) for the natural logarithm of the risk ratio using the estimated standard error above:
-
-$$
-95\% \space CI_{ln(\hat{\theta})} = 
-\ln(\hat{\theta}) \pm 1.96*SE_{\ln(\hat{\theta}_i)} = 
-0.32785  \pm 1.96 \times 0.04159 = (`r round(log.rr.ci.norm.apx[1], 3)`, `r round(log.rr.ci.norm.apx[2], 3)`)
-$$
-
-### Step Four
-
-I then exponentiated the confidence interval to get it on the scale of the original risk ratio:
-
-$$
-95\% \space CI_{\hat{\theta}} = e^{\ln(\hat{\theta}) \pm 1.96*SE_{\ln(\hat{\theta}_i)}} = 
-(e^{`r round(log.rr.ci.norm.apx[1], 3)`}, e^{`r round(log.rr.ci.norm.apx[2], 3)`}) = 
-(`r round(rr.ci.norm.apx[1], 3)`, `r round(rr.ci.norm.apx[2], 3)`)
-$$
-
-### Assumptions
-
-For Wald confidence intervals to be valid, the following assumptions must hold:
+For Wald CIs to be valid, the following assumptions must hold:
 
 1. The underlying population in the study must have been sampled randomly. (The bootstrapped samples from the study observations must also be drawn randomly, although this assumption is automatically pseudo-met via R's pseudo-random number generator.)  The original investigators met or didn't meet this assumption when they collected the data.
 
 2. The underlying observations in the study population must be independent of each other. (The bootstrapped samples from the study observations must also be independent of each other, although this assumption is also pseudo-met via R's pseudo-random number generator.) The original investigators met or didn't meet this assumption when they collected the data.
 
-3. The distribution of the natural logarithms of the risk ratios calculated from the bootstrapped samples, i.e., the sampling distribution, must be asymptotically normal, as confirmed by the plot of the distribution of the log risk ratios in step two. In particular, it must be symmetric.  (This does not necessarily mean that the distribution of the original data has to be normal, only that the distribution of the log risk ratios calculated from the bootstrapped samples has to be.)
+3. The distribution of the RDs calculated from the bootstrapped samples, i.e., the sampling distribution, must be asymptotically normal, as confirmed by the plot of the distribution of the RDs in step two. In particular, it must be symmetric.  (This does not necessarily mean that the distribution of the original data has to be normal, only that the distribution of the RDs calculated from the bootstrapped samples has to be.)
 
 
 ```{r calculating cell counts, results=FALSE}
@@ -388,7 +317,6 @@ obese_no_hyper_count
 ideal_hyper_count
 ideal_no_hyper_count
 
-
 ```
 
 4. The original dataset from which the bootstrap samples are drawn must contain sufficiently large numbers of cases and non-cases in both the exposed and unexposed categories.[^1]  Here we have 
@@ -399,16 +327,133 @@ ideal_no_hyper_count
 
 so this assumption also appears met.
 
-5. The risk ratio cannot be too close to zero, particularly in small samples, lest the CIs inaccurately include invalid negative risk ratios.[^2]
+5. The RD cannot be too close to zero or one, particularly in small samples, lest the CIs inaccurately include invalid RDs below zero or above one.[^2]
 
 [^1]: Greenland S. Interval estimation by simulation as an alternative to and extension of confidence intervals. International Journal of Epidemiology 2004;33(6):1389–97. doi:10.1093/ije/dyh276. (Page 390.)
 
 [^2]: Carpenter J, Bithell J. Bootstrap confidence intervals: when, which, what? A practical guide for medical statisticians. Statistics in Medicine 2000;19(9):1141–1164. doi:10.1002/(SICI)1097-0258(20000515)19:9<1141::AID-SIM479>3.0.CO;2-F. (Page 1150.)
 
-### Comparison with bias-corrected and accelerated confidence intervals
 
-The 95% confidence interval for the risk ratio using a normal approximation is (`r round(rr.ci.norm.apx[1], 3)`, `r round(rr.ci.norm.apx[2], 3)`), whereas
-the bias-corrected and accelerated confidence interval of (`r round(ci.rr.bca$bca[4], 3)`, `r round(ci.rr.bca$bca[5], 3)`).
+### Comparison to the bias-corrected and accelerated CI
+
+The 95% CI for the RD using a normal approximation is (`r round(rd.ci.norm.apx[1], 3)`, `r round(rd.ci.norm.apx[2], 3)`), compared to the bias-corrected and accelerated CI of (`r round(ci.rd.bca$bca[4], 3)`, `r round(ci.rd.bca$bca[5], 3)`).
+
+\pagebreak
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Question Four
+
+## Showing your work, calculate the 95% confidence interval for the risk ratio (RR), and report your answer. (Show the formula you used, and the specific values that went into your calculation.) What assumptions does this require? How does this compare to the results from question one? (10 points)
+
+To simplify notation:
+
+* Let the point estimate of the RR derived via model-based standardization, $\hat{RR}$, be denoted by $\hat{\theta}$; 
+* Let $n$ denote the number of bootstrapped samples indexed by $i$ (here from $i = 1$ to $i = 5000$); and
+* Let each estimate of the model-standardized RR derived from a bootstrap sample of the original data be denoted by $\hat{\theta}_i$.
+
+```{r results=FALSE}
+
+log(stdized.rr)
+
+mean(log(rr.samples) - log(stdized.rr))
+
+```
+
+To calculate the 95% CI for the model-standardized estimate of the RR using the Wald normal approximation
+
+$$ \hat{\theta} \pm 1.96 \times SE_{\hat{\theta}_i}, $$
+
+### Step One
+
+I first calculated the mean of the differences between the natural logarithm of the original model-standardized point estimate of the RR $\ln(\hat{\theta}) = \ln(`1.388`) = 0.328$ and the natural logarithms of the bootstrapped point estimates of the model-standardized RR, $\overline{\Delta_{ln(\hat{\theta_i})}}$:
+
+$$
+\overline{\Delta_{ln(\hat{\theta_i})}} = \frac{\sum\limits_{i = 1}^{n}(\ln(\hat{\theta}_i )-\ln(\hat{\theta}))}{n} = 
+\frac{\sum\limits_{i = 1}^{5000}(\ln(\hat{\theta}_i )-0.32785)}{5000} = -0.00108
+$$
+
+### Step Two
+
+I used that mean $\overline{\Delta_{\ln(\hat{\theta_i})}}$ to calculate the sample standard deviation of the differences between the $\ln(\hat{\theta}_i)$s and $\ln(\hat{\theta})$, as the best possible estimate of the standard error of that estimate, ($SE_{\ln(\hat{\theta}_i)}$): 
+
+$$
+\begin{aligned}
+SE_{\ln(\hat{\theta}_i)} 
+\approx sd(\ln(\hat{\theta}_i) - \ln(\hat{\theta})) &=  
+\sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) - \overline{\Delta_{\ln(\hat{\theta_i})}}\right)^2} \\ 
+&= \sqrt{\frac{1}{5000-1} \sum\limits_{i = 1}^{5000}\left(\left(\ln(\hat{\theta}_i)-0.32785\right) - (-0.00108)\right)^2} = 
+`r round(sd.log.rr.boot, 3)`
+\end{aligned}
+$$
+
+(Note: I did both steps one and two using the R one-liner `sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))`.)
+
+### Step Three
+
+I calculated the Wald 95% CI for the natural logarithm of the RR using the estimated standard error above:
+
+$$
+95\% \space CI_{ln(\hat{\theta})} = 
+\ln(\hat{\theta}) \pm 1.96*SE_{\ln(\hat{\theta}_i)} = 
+0.32785  \pm 1.96 \times 0.04159 = (`r round(log.rr.ci.norm.apx[1], 3)`, `r round(log.rr.ci.norm.apx[2], 3)`)
+$$
+
+### Step Four
+
+I then exponentiated the CI to get it on the scale of the original RR:
+
+$$
+95\% \space CI_{\hat{\theta}} = e^{\ln(\hat{\theta}) \pm 1.96*SE_{\ln(\hat{\theta}_i)}} = 
+(e^{`r round(log.rr.ci.norm.apx[1], 3)`}, e^{`r round(log.rr.ci.norm.apx[2], 3)`}) = 
+(`r round(rr.ci.norm.apx[1], 3)`, `r round(rr.ci.norm.apx[2], 3)`)
+$$
+
+### Assumptions
+
+For Wald CIs to be valid, the following assumptions must hold:
+
+1. The underlying population in the study must have been sampled randomly. (The bootstrapped samples from the study observations must also be drawn randomly, although this assumption is automatically pseudo-met via R's pseudo-random number generator.)  The original investigators met or didn't meet this assumption when they collected the data.
+
+2. The underlying observations in the study population must be independent of each other. (The bootstrapped samples from the study observations must also be independent of each other, although this assumption is also pseudo-met via R's pseudo-random number generator.) The original investigators met or didn't meet this assumption when they collected the data.
+
+3. The distribution of the natural logarithms of the RRs calculated from the bootstrapped samples, i.e., the sampling distribution, must be asymptotically normal, as confirmed by the plot of the distribution of the log RRs in step two. In particular, it must be symmetric.  (This does not necessarily mean that the distribution of the original data has to be normal, only that the distribution of the log RRs calculated from the bootstrapped samples has to be.)
+
+4. The original dataset from which the bootstrap samples are drawn must contain sufficiently large numbers of cases and non-cases in both the exposed and unexposed categories.[^1]  Here we have 
+  + `r obese_hyper_count` obese participants with hypertension (exposed cases);
+  + `r obese_no_hyper_count` obese participants without hypertension (exposed non-cases);
+  + `r ideal_hyper_count` "ideal"-weight participants with hypertension (unexposed cases);
+  + `r ideal_no_hyper_count` "ideal"-weight participants without hypertension (unexposed cases);
+
+so this assumption also appears met.
+
+5. The RR cannot be too close to zero, particularly in small samples, lest the CIs inaccurately include invalid negative RRs.[^2]
+
+[^1]: Greenland S. Interval estimation by simulation as an alternative to and extension of confidence intervals. International Journal of Epidemiology 2004;33(6):1389–97. doi:10.1093/ije/dyh276. (Page 390.)
+
+[^2]: Carpenter J, Bithell J. Bootstrap confidence intervals: when, which, what? A practical guide for medical statisticians. Statistics in Medicine 2000;19(9):1141–1164. doi:10.1002/(SICI)1097-0258(20000515)19:9<1141::AID-SIM479>3.0.CO;2-F. (Page 1150.)
+
+### Comparison with bias-corrected and accelerated CIs
+
+The 95% CI for the RR using a normal approximation is (`r round(rr.ci.norm.apx[1], 3)`, `r round(rr.ci.norm.apx[2], 3)`), whereas
+the bias-corrected and accelerated CI of (`r round(ci.rr.bca$bca[4], 3)`, `r round(ci.rr.bca$bca[5], 3)`).
 
 \pagebreak
 
