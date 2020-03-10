@@ -1,0 +1,570 @@
+---
+title: |
+    | \fontsize{15pt}{5pt}\selectfont\textbf{Lab Assignment 3}
+    | \vspace{.2cm}\textbf{PB HLTH 250C: Advanced Epidemiologic Methods}
+author: \vspace{-.1cm}\fontsize{15pt}{0pt}\selectfont\textbf{Katherine Rose Wolf}
+date: \vspace{-.3cm}\fontsize{15pt}{0pt}\selectfont\textbf{\today}
+fontsize: 11pt
+header-includes: 
+  \usepackage{fancyhdr} \setlength{\headheight}{14pt}
+  \usepackage{soul}
+  \usepackage{color}
+  \usepackage{float}
+  \usepackage{hyperref}
+  \usepackage{sectsty} 
+  \sectionfont{\centering}
+  \usepackage{enumitem}
+  \usepackage{amsmath}
+  \usepackage{amsfonts}
+  \usepackage{bm}
+  \usepackage{titling}
+  \usepackage[hang,flushmargin]{footmisc} 
+  \usepackage{booktabs}
+  \usepackage{lscape}
+md_extensions: +inline_notes
+number_sections: no
+word_document: default
+nomathfont: Palatino
+monofont: Monaco
+mainfont: Palatino
+sansfont: Helvetica Neue
+fontfamily: mathpazo
+output: 
+  pdf_document: 
+    keep_tex: yes
+    fig_caption: false
+  latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      results = FALSE)
+
+```
+
+
+```{r load required packages and read data}
+
+library(knitr)
+library(R2jags)
+library(coda)
+library(foreign)
+
+load("frmgham_recoded_three.Rdata")
+
+```
+
+
+```{r do a bit of variable recoding}
+
+# Extract data elements from data frame
+bmi <- frmgham_recoded$bmi
+overweight <- as.integer(bmi >= 25)
+cursmoke <- frmgham_recoded$cursmoke
+age.c <- as.numeric(scale(frmgham_recoded$age))
+male <- as.integer(frmgham_recoded$sex == 1)
+
+# Create education indicators (a shortcut using the model.matrix command)
+X.educ <- model.matrix(~-1 + factor(educ), 
+                       data=frmgham_recoded)
+educ1 <- X.educ[,1]
+educ2 <- X.educ[,2]
+educ3 <- X.educ[,3]
+educ4 <- X.educ[,4]
+
+```
+
+
+```{r create the JAGS code that defines the posterior distribution}
+
+# JAGS code for the posterior distribution:
+overweight.model <- function() {
+    for (i in 1:N) {
+        logit(pi[i]) <- 
+            b[1] + 
+            b[2]*cursmoke[i] + 
+            b[3]*age.c[i] + 
+            b[4]*male[i] + 
+            b[5]*educ2[i] + 
+            b[6]*educ3[i] + 
+            b[7]*educ4[i];
+        overweight[i] ~ dbin(pi[i], 1);
+    }
+    
+# PRIORS ON BETAS
+for (j in 1:Nx){
+    b[j] ~ dnorm(mu[j], 
+                 tau[j]); # Independent normal priors
+    OR[j] <- exp(b[j]); # Calculate the odds ratios
+    }
+}
+
+```
+
+
+```{r define element for the jags function}
+
+# constants to be passed in
+N <- length(overweight); # number of observations to loop over
+Nx <- 7; # number of parameters (w/ intercept)
+n.iter <- 10000; # number of iterations to run (total)
+
+# Parameters on the priors:
+mu <- rep(0,Nx); # Prior mean of betas
+tau <- rep(.001,Nx); # Prior precisions
+
+# List of data elements to pass in:
+overweight.data <- list("N", 
+                        "Nx", 
+                        "overweight", 
+                        "age.c", 
+                        "male", 
+                        "cursmoke",
+                        "educ2", 
+                        "educ3",
+                        "educ4",
+                        "mu",
+                        "tau")
+
+# List of parameters to keep track of:
+overweight.parameters <- c("b", "OR")
+
+# Function to generate initial values for each chain:
+overweight.inits <- function() {list (b = rnorm(Nx, 0 , sd = 0.5))}
+
+```
+
+
+```{r run the mcmc algorithm and summarize}
+
+set.seed(123)
+overweight.sim <- jags(data = overweight.data,
+                       model.file = overweight.model,
+                       inits = overweight.inits,
+                       parameters.to.save = overweight.parameters,
+                       n.iter = n.iter)
+
+print(overweight.sim, digits = 4)
+
+```
+
+```{r assess convergence of above models via trace plots autocorrelation plots and Geweke test}
+
+overweight.mcmc <- as.mcmc(overweight.sim)
+
+# Traceplot and density plots for regression coefficients
+# code will save to PDF in current directory.
+# Execute "plot" commands only to plot to screen.
+pdf("Traceplot_LogisticReg1.pdf") # Write what comes next to PDF file
+plot(overweight.mcmc[1][, 1:4]) # For beta1-4
+
+pdf("Traceplot_LogisticReg2.pdf") # Write what comes next to PDF file
+plot(overweight.mcmc[1][, 5:8]) # For beta5-7 and deviance
+
+dev.off() # Stop writing to the PDF file
+
+# Autocorrelation plots for the regression coefficients
+pdf("ACF_LogisticReg.pdf")
+par(omi=c(.25, .25, .25, .25)) # Create an outer margin (room for title)
+
+autocorr.plot(overweight.mcmc[1][, 1:7]) # For chain 1
+title("Chain 1", outer=T) # Place title in outer margin of page
+
+autocorr.plot(overweight.mcmc[2][, 1:7]) # For chain 2 (optional)
+title("Chain 2", outer=T)
+
+autocorr.plot(overweight.mcmc[3][, 1:7]) # For chain 3 (optional)
+title("Chain 3", outer=T)
+
+dev.off()
+
+geweke.diag(overweight.mcmc[,1:7]) # Geweke test
+
+```
+
+```{r informative prior one}
+
+# Informative prior 1 (Change prior mean to log(2) for b[2])
+mu[2] <- log(2)
+
+set.seed(123)
+overweight.sim.inform1 <- jags(data = overweight.data,
+                               model.file = overweight.model,
+                               inits = overweight.inits,
+                               parameters.to.save = overweight.parameters,
+                               n.iter = n.iter)
+
+print(overweight.sim.inform1, digits = 4)
+
+```
+
+
+```{r informative prior two}
+
+# Informative prior 2 (Change prior precision to 1/0.1225 vor beta[4])
+sd.prior <- (log(2.67) - log(1.5))/(2*1.96) # SD for beta2 on log-scale
+tau[2] <- 1/sd.prior^2 # Convert to precision (reciprocal of variance)
+
+set.seed(123)
+
+overweight.sim.inform2 <- jags(data = overweight.data,
+                               model.file = overweight.model,
+                               inits = overweight.inits,
+                               parameters.to.save = overweight.parameters,
+                               n.iter = n.iter)
+
+print(overweight.sim.inform2, digits=4)
+
+```
+
+\pagebreak
+
+# Questions
+
+## Question One
+
+\textbf{Using the R code provided, complete Table 1 using the posterior samples of the odds ratios (ORs). \textit{(20 points)}}
+
+```{r make values for the table}
+
+            # b[1] + 
+            # b[2]*cursmoke[i] + 
+            # b[3]*age.c[i] + 
+            # b[4]*male[i] + 
+            # b[5]*educ2[i] + 
+            # b[6]*educ3[i] + 
+            # b[7]*educ4[i];
+
+# vague prior
+vague_smoke <- 
+  paste0(format(round(overweight.sim$BUGSoutput$summary["OR[2]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim$BUGSoutput$summary["OR[2]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim$BUGSoutput$summary["OR[2]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+  
+vague_age <- 
+  paste0(format(round(overweight.sim$BUGSoutput$summary["OR[3]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim$BUGSoutput$summary["OR[3]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim$BUGSoutput$summary["OR[3]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+vague_sex <- 
+  paste0(format(round(overweight.sim$BUGSoutput$summary["OR[4]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim$BUGSoutput$summary["OR[4]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim$BUGSoutput$summary["OR[4]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+vague_high <- 
+  paste0(format(round(overweight.sim$BUGSoutput$summary["OR[5]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim$BUGSoutput$summary["OR[5]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim$BUGSoutput$summary["OR[5]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+vague_some <- 
+  paste0(format(round(overweight.sim$BUGSoutput$summary["OR[6]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim$BUGSoutput$summary["OR[6]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim$BUGSoutput$summary["OR[6]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+vague_college <- 
+  paste0(format(round(overweight.sim$BUGSoutput$summary["OR[7]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim$BUGSoutput$summary["OR[7]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim$BUGSoutput$summary["OR[7]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+# informative one
+info1_smoke <- 
+  paste0(format(round(overweight.sim.inform1$BUGSoutput$summary["OR[2]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[2]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[2]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+  
+info1_age <- 
+  paste0(format(round(overweight.sim.inform1$BUGSoutput$summary["OR[3]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[3]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[3]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info1_sex <- 
+  paste0(format(round(overweight.sim.inform1$BUGSoutput$summary["OR[4]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[4]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[4]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info1_high <- 
+  paste0(format(round(overweight.sim.inform1$BUGSoutput$summary["OR[5]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[5]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[5]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info1_some <- 
+  paste0(format(round(overweight.sim.inform1$BUGSoutput$summary["OR[6]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[6]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[6]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info1_college <- 
+  paste0(format(round(overweight.sim.inform1$BUGSoutput$summary["OR[7]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[7]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform1$BUGSoutput$summary["OR[7]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+# informative two
+info2_smoke <- 
+  paste0(format(round(overweight.sim.inform2$BUGSoutput$summary["OR[2]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[2]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[2]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+  
+info2_age <- 
+  paste0(format(round(overweight.sim.inform2$BUGSoutput$summary["OR[3]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[3]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[3]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info2_sex <- 
+  paste0(format(round(overweight.sim.inform2$BUGSoutput$summary["OR[4]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[4]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[4]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info2_high <- 
+  paste0(format(round(overweight.sim.inform2$BUGSoutput$summary["OR[5]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[5]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[5]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info2_some <- 
+  paste0(format(round(overweight.sim.inform2$BUGSoutput$summary["OR[6]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[6]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[6]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+info2_college <- 
+  paste0(format(round(overweight.sim.inform2$BUGSoutput$summary["OR[7]", "50%"], 
+                      4), nsmall = 4),
+         " (",
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[7]", "2.5%"], 
+                      4), nsmall = 4),
+         ", ", 
+         format(round(overweight.sim.inform2$BUGSoutput$summary["OR[7]", "97.5%"], 
+                      4), nsmall = 4),
+         ")")
+
+```
+
+
+\begin{landscape}
+\begin{table}
+\begin{minipage}{\textwidth}
+\caption{Posterior median and 95\% credible intervals for odds ratios from logistic regression model of overweight status on smoking, controlling for age, sex, and education level.}
+\begin{tabular}{llll}
+\hline
+  Variable & Vague prior & Informative Prior 1\footnote{Prior mean for OR of current smoking = 2, prior variance = 1000.} & Informative Prior 2\footnote{Prior mean for OR of current smoking = 2, prior variance = 0.02. (I believe that the prior variance originally listed on the assignment, 0.08, was an error, and that it arose from a given prior interval for Informative Prior 2 of (1, 3), possibly from a prior version of this assignment, instead of (1.5, 2.67). Proof: $(\log(3)-\log(1))/(2*1.96) = `r signif(((log(3)-log(1))/(2*1.96))^2, digits = 2)`$ whereas $(\log(2.67)-\log(1.5))/(2*1.96) = `r signif(sd.prior^2, 2)`$.} \\
+  \cline{1-4}
+Current smoker (versus not)  & `r vague_smoke` & `r info1_smoke` & `r info2_smoke` \\
+Age (per year increase)      & `r vague_age` & `r info1_age` & `r info2_age` \\
+Male sex (versus female) & `r vague_sex` & `r info1_sex` & `r info2_sex` \\
+High school education (versus < high school education) & `r vague_high` & `r info1_high` & `r info2_high` \\
+Some college (versus < high school education) & `r vague_some` & `r info1_some` & `r info2_some` \\
+College plus (versus < high school education) & `r vague_college` & `r info1_college` & `r info2_college` \\
+\hline
+\end{tabular}
+\end{minipage}
+\end{table}
+\end{landscape}
+
+\pagebreak
+
+## Question Two
+
+\textbf{Using the parameterization for Informative Prior 1 (IP1), calculate the prior 95\% interval for the smoking OR. \textit{Hint: Calculate the interval on the scale of the log-OR ($\beta$) and transform the limits.} In \textit{one or two sentences} describe how this compares to the prior interval for Informative Prior 2 (IP2) stated in the instructions above. \textit{(10 points)}}
+
+\textit{Calculations}
+
+Let $\beta_s$ denote the normal prior for the log OR comparing the odds (risk) of overweight (body mass index > 25) in a smoker to that in a nonsmoker. The parameterization for $\beta_s$ given for IP1 states that $\beta_s$ is normally distributed with hyperparameters mean $\mu_s$ and variance $\sigma^2_s$, i.e., $\beta_s \sim N(\mu_s, \sigma^2_s)$, such that the OR $e^{\beta_s}$, or the natural exponentiation of the mean of the log-OR, is 2, i.e., $e^{E[\beta_s]} = e^{\mu_s} = 2$, and $\beta_s$ has a variance of 1000, i.e., $\sigma^2_s = 1000$.
+
+To get the mean of the log-OR, then, we take the natural logarithm of the natural exponentiation of the mean of the log-OR, i.e., $\mu_s = \log{e^{\mu_{s}}} = \log(2)$.
+
+To get the standard deviation of $\beta_s$, $\sigma_s$, we take the square root of the variance $\sigma^2_s$, i.e., $\sigma_s = \sqrt{\sigma^2_s} = \sqrt{1000}$.
+
+Then we can calculate the prior 95\% interval for the log-OR by taking 1.96 standard deviations above and below its mean:
+\begin{itemize}
+\setlength\itemsep{0em}
+\item Lower bound on prior 95\% interval for $\beta_s$: $\mu_s - 1.96\sigma_s = \log(2) - 1.96\sqrt{1000} = `r signif(log(2) - 1.96*sqrt(1000), 5)`$
+\item Upper bound on prior 95\% interval for $\beta_s$: $\mu_s + 1.96\sigma_s = \log(2) + 1.96\sqrt{1000} = `r signif(log(2) + 1.96*sqrt(1000), 5)`$
+\end{itemize}
+
+To get the prior 95\% interval for the OR, $e^{\beta_s}$, then, we exponentiate the prior 95\% interval for $\beta_s$: 
+
+```{r calculate bounds ip1}
+
+info1_prior_95_upper <- signif(exp(log(2) + 1.96*sqrt(1000)), 5)
+
+info1_prior_95_lower <- signif(exp(log(2) - 1.96*sqrt(1000)), 5)
+
+```
+
+\begin{itemize}
+\setlength\itemsep{0em}
+\item Lower bound on prior 95\% interval for $e^{\beta_s}$: $e^{\mu_s - 1.96\sigma_s} = e^{\log(2) - 1.96\sqrt{1000}} = `r signif(exp(log(2) - 1.96*sqrt(1000)), 5)`$
+\item Upper bound on prior 95\% interval for $e^{\beta_s}$: $e^{\mu_s + 1.96\sigma_s} = e^{\log(2) + 1.96\sqrt{1000}} = `r signif(exp(log(2) + 1.96*sqrt(1000)), 5)`$
+\end{itemize}
+
+Thus the prior 95\% interval for IP1 is $(`r info1_prior_95_lower`, `r info1_prior_95_upper`)$.
+
+\textit{Comparisons}
+
+The prior 95\% interval drawn from IP1 is $(`r info1_prior_95_lower`, `r info1_prior_95_upper`)$, corresponding to a variance of 1000, whereas IP2 assumes a prior 95\% interval of $(1.5, 2.67)$, which, under the assumption of a normal distribution, yields a variance of only $(\log(2.67)-\log(1.5))/(2*1.96) = `r signif(sd.prior^2, 3)`$. The drastic difference in variances determines a drastic difference in the size of the prior intervals for which we are 95\% confident that we have captured the true parameter: the wide, flat probability distribution of IP1 assigns almost equal proabability of the true parameter value appearing among a wide range of values, whereas IP2's narrow, tall probability distribution assigns much higher probabilities of the true value appearing the closer one gets to its mean.
+
+\pagebreak
+
+## Question Three
+
+\textbf{What seems to be more influential on the smoking effect, Informative Prior 1 or Informative Prior 2? In \textit{one sentence}, briefly explain what you think is happening? \textit{(5 points)}}
+
+\textit{Statement}
+
+The model run using IP2 gives an estimate of the posterior median closer to 2 but a slightly larger confidence interval around it, `r info2_smoke`, than the model run using IP1, `r info1_smoke`, showing that IP2 is more influential on the smoking effect than IP1.
+
+\textit{Explanation}
+
+IP2 is more influential because its distribution has a high peak at and assigns high probabilities to values close to its mean (95\% of the probability is between 1.5 and 2.67!), which pulls the posterior median toward it, whereas IP1's much more widely distributed probability density assigns almost equal probability to the existence of the true mean anywhere in a big range from `r info1_prior_95_lower` to `r info1_prior_95_upper`, allowing the new data more latitude to assign the peak(s) and thus the posterior median.
+
+\pagebreak
+
+## Question Four
+
+\textbf{Using the trace plots, density plots and autocorrelation plots (focus on 1st chain) from the diagnostics for the first model (“Vague prior”), briefly describe any evidence of convergence (or lack of convergence) that you see. Attach these plots (2 pages for trace/density plots; 1 page for autocorrelation plots). \textit{(10 points)}}
+
+All signs point toward convergence.
+\begin{itemize}
+  \item The traceplots for all the parameters and the posterior mean deviance ($-2\log(p(\textbf{y}|\theta))$ look random around a horizontal line without any snaking, periodicity, trending, or sharp jumps, i.e., mostly like fuzzy caterpillars, a sign of convergence.
+  \item The density plots showing an empirical density function for each parameter and the posterior mean deviance all look smooth and unimodal with ranges limited to reasonable log-ORs between -1 and just above 1 (except for the deviance, which ranges from 5530 to 5570, also reasonable), all traits that do not raise red flags for non-convergence. 
+  \item The autocorrelation plots die down to near zero almost immediately for every parameter, showing that for lags $k$ of $k > 1$, observations are not correlated, also a sign of convergence.
+\end{itemize}
+
+
+```{r results=TRUE}
+
+knitr::include_graphics("Traceplot_LogisticReg1.pdf")
+
+knitr::include_graphics("Traceplot_LogisticReg2.pdf")
+
+include_graphics("ACF_LogisticReg.pdf")
+
+```
+
+\pagebreak
+
+## Question Five
+
+\textbf{From the results of the Geweke test, is there evidence for lack of convergence? Justify your answer. \textit{(5 points)}}
+
+The Geweke test tests whether the Markov Chain is constant between early and later parts of the sequence of numbers by comparing subsamples of the random samples for each parameter, here comparing the first 10% of the chain to the last half. It outputs the z-statistic and indicates non-convergence if the test-statistic is > 1.96 in absolute value.\footnote{Lecture 5, slide 46.}
+
+The Geweke test results here are:
+```{r results=TRUE}
+
+geweke.diag(overweight.mcmc[,1:7])
+
+```
+
+None of these results for any of the parameters in any of the three chains run are > 1.96, so the Geweke test does not show evidence of lack of convergence. Woohoo!
+
+\pagebreak
+
+# R code
+
+```{r ref.label=knitr::all_labels(), echo = T, eval = F}
+
+```
+

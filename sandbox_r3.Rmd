@@ -1,0 +1,130 @@
+---
+title: |
+    | \fontsize{15pt}{5pt}\selectfont\textbf{Lab Assignment 3}
+    | \vspace{.2cm}\textbf{PB HLTH 250C: Advanced Epidemiologic Methods}
+author: \vspace{-.1cm}\fontsize{15pt}{0pt}\selectfont\textbf{Katherine Rose Wolf}
+date: \vspace{-.3cm}\fontsize{15pt}{0pt}\selectfont\textbf{\today}
+fontsize: 11pt
+header-includes: 
+  \usepackage{fancyhdr} \setlength{\headheight}{14pt}
+  \usepackage{soul}
+  \usepackage{color}
+  \usepackage{float}
+  \usepackage{hyperref}
+  \usepackage{sectsty} 
+  \sectionfont{\centering}
+  \usepackage{enumitem}
+  \usepackage{amsmath}
+  \usepackage{amsfonts}
+  \usepackage{bm}
+  \usepackage{titling}
+  \usepackage[hang,flushmargin]{footmisc} 
+  \usepackage{booktabs}
+  \usepackage{lscape}
+md_extensions: +inline_notes
+number_sections: no
+word_document: default
+nomathfont: Palatino
+monofont: Monaco
+mainfont: Palatino
+sansfont: Helvetica Neue
+fontfamily: mathpazo
+output: 
+  pdf_document: 
+    keep_tex: yes
+    fig_caption: false
+  latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+
+```
+
+
+```{r load required packages and read data}
+
+library(R2jags)
+library(coda)
+require(foreign)
+
+load("frmgham_recoded_three.Rdata")
+
+```
+
+
+## Question One
+
+\textbf{Using the R code provided, complete Table 1 using the posterior samples of the odds ratios. \textit{(20 points)}}
+
+
+\begin{landscape}
+\begin{table}
+\begin{minipage}{\textwidth}
+\caption{Posterior median and 95\% credible intervals for odds ratios from logistic regression model of overweight status on smoking, controlling for age, sex, and education level.}
+\begin{tabular}{llll}
+\hline
+  Variable & Vague prior & Informative Prior 1\footnote{Prior mean for OR of current smoking = 2, prior variance = 1000.} & Informative Prior 2\footnote{Prior mean for OR of current smoking = 2, prior variance = 0.08.} \\
+  \cline{2-4}
+Current smoker (versus not)  &       &       & \\
+Age (per year increase) &       &      & \\
+Male sex (versus female) &       &      & \\
+High school education (versus < high school education) &       &      & \\
+Some college (versus < high school education) &       &      & \\
+College plus (versus < high school education) &       &      & \\
+\hline
+\end{tabular}
+\end{minipage}
+\end{table}
+
+\end{landscape}
+
+\pagebreak
+
+## Question Two
+
+\textbf{Using the parameterization for Informative Prior 1, calculate the prior 95\% interval for the smoking OR. \textit{Hint: Calculate the interval on the scale of the log-OR ($\beta$) and transform the limits.} In \textit{one or two sentences} describe how this compares to the prior interval for Informative Prior 2 stated in the instructions above. \textit{(10 points)}}
+
+Let $\beta_s$ denote the normal prior for the log odds ratio comparing the odds (risk) of overweight (body mass index > 25) in a smoker to that in a nonsmoker. The parameterization for $\beta_s$ given for Informative Prior 1 states that $\beta_s$ is normally distributed, i.e., $\beta_s \sim N(\mu_s, \sigma^2_s)$, such that the odds ratio $e^{\beta_s}$, or the natural exponentiation of the mean of the log-OR, is 2, i.e., $e^{E[\beta_s]} = e^{\mu_s} = 2$, and $\beta_s$ has a variance of 1000, i.e., $\sigma^2_s = 1000$.
+
+To get the mean of the log-OR, then, we take the natural logarithm of the natural exponentiation of the mean of the log-OR, i.e., $\mu_s = \log{e^{\mu_{s}}} = \log(2)$.
+
+To get the standard deviation of $\beta_s$, $\sigma_s$, we take the square root of the variance $\sigma^2_s$, i.e., $\sigma_s = \sqrt{\sigma^2_s} = \sqrt{1000}$.
+
+Then we can calculate the prior 95\% interval for the log-OR by taking 1.96 standard deviations above and below the mean:
+
+Upper bound on prior 95\% interval for $\beta_s$: $\mu_s + 1.96\sigma_s = \log(2) + 1.96\sqrt{1000} = `r log(2) + 1.96*sqrt(1000)`$
+
+Lower bound on prior 95\% interval for $\beta_s$: $\mu_s - 1.96\sigma_s = \log(2) - 1.96\sqrt{1000} = `r log(2) - 1.96*sqrt(1000)`$
+
+To get the prior 95\% interval for the OR, $e^{\beta_s}$, then, we exponentiate the prior 95\% interval for $\beta_s$: 
+
+```{r}
+
+info1_mu <- signif(log(2), 4)
+
+info1_prior_95_upper <- signif(exp(log(2) + 1.96*sqrt(1000)), 5)
+
+info1_prior_95_lower <- signif(exp(log(2) - 1.96*sqrt(1000)), 5)
+
+
+```
+
+
+Upper bound on prior 95\% interval for $e^{\beta_s}$: $e^{\mu_s + 1.96\sigma_s} = e^{\log(2) + 1.96\sqrt{1000}} = `r round(exp(log(2) + 1.96*sqrt(1000)), 4)`$
+
+Upper bound on prior 95\% interval for $e^{\beta_s}$: $e^{\mu_s - 1.96\sigma_s} = e^{\log(2) - 1.96\sqrt{1000}} = `r round(exp(log(2) - 1.96*sqrt(1000)), 4)`$
+
+Thus the prior estimate for $e^{\beta_s}$ and 95\% prior interval are $`r info1_mu` (`r info1_prior_95_upper`, `r info1_prior_95_lower`)$.
+
+\pagebreak
+
+# R code
+
+```{r ref.label=knitr::all_labels(), echo = T, eval = F}
+
+```
+

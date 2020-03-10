@@ -180,7 +180,7 @@ par(mfrow=c(1,1))
 
 ```
 
-The density plots for the sampling distributions for the RD and the RR drawn from bootstrapped samples of the data look normal and centered close to the point estimates from question one, as does the density plot for the sampling distribution of the natural logarithm of the RR.  Thus we can likely use normal approximations to calculate 95% CIs for both the RD and the logarithm of the RR. (I don't quite understand why the original assignment had us look at a density plot for the sampling distribution of the RR if we're calculating 95% CIs on the scale of the predictors, which corresponds to the natural logarithm of the RR.)
+The density plots for the sampling distributions for the RD and the RR drawn from bootstrapped samples of the data look normal and centered close to the point estimates from question one, as does the density plot for the sampling distribution of the natural logarithm of the RR (log RR), although all three are slightly negatively skewed. Moreover, the distribution of bootstrap sample RDs ranges from 0.10 to 0.35, the RRs from a little above 1.1 to 1.6, and the log RRs from 0.15 to 0.48, which means that 95% CIs are unlikely to include invalid values, i.e., RDs > 1 or < -1, RRs < 0, or log RRs $\leq$ 0. Thus we can likely use normal approximations to calculate 95% CIs for the RD, the RR, and the log RR. (I didn't quite understand why the original assignment had us look at a density plot for the bootstrap sampling distribution of the RR if we're calculating 95% CIs on the scale of the log RR, so I included a plot of the distribution of the log RRs as well.)  
 
 \pagebreak
 
@@ -247,46 +247,43 @@ I first calculated the mean of the differences between the original model-standa
 
 $$
 \overline{\Delta_{\hat{\theta_i}}} = \frac{\sum\limits_{i = 1}^{n}(\hat{\theta}_i-\hat{\theta})}{n} = 
-\frac{\sum\limits_{i = 1}^{5000}(\hat{\theta}_i-`r round(stdized.rd, 5)`)}{5000} = `r round(mean(rd.samples - stdized.rd), 3)`
+\frac{\sum\limits_{i = 1}^{5000}(\hat{\theta}_i-`r round(stdized.rd, 5)`)}{5000} = `r round(mean(rd.samples - stdized.rd), 6)`
 $$
 
 
 ### Step Two
 
-I used that mean $\overline{\Delta_{\hat{\theta_i}}}$ to calculate the sample standard deviation of the differences between the $\hat{\theta}_i$s and $\hat{\theta}$, as the best possible estimate of the standard error of that estimate, ($SE_{\hat{\theta}_i}$): 
+I used that mean $\overline{\Delta_{\hat{\theta_i}}}$ to calculate the sample standard deviation of the differences between the $\hat{\theta}_i$s and $\hat{\theta}$, in order to use it as the best possible estimate of the standard error (SE) of that estimate, $SE_{\hat{\theta}_i}$: 
 
 $$
 \begin{aligned}
 SE_{\hat{\theta}_i} 
 \approx sd(\hat{\theta}_i - \hat{\theta}) &=  
 \sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\hat{\theta}_i-\hat{\theta}\right) - \overline{\Delta_{\hat{\theta_i}}}\right)^2} \\ 
-&= \sqrt{\frac{1}{5000-1} \sum\limits_{i = 1}^{5000}\left(\left(\hat{\theta}_i-`r round(stdized.rd, 5)`\right) - (`r round(mean(rd.samples - stdized.rd), 3)`)\right)^2} = 
-`r round(sd.rd.boot, 3)`
+&= \sqrt{\frac{1}{5000-1} \sum\limits_{i = 1}^{5000}\left(\left(\hat{\theta}_i-`r round(stdized.rd, 5)`\right) - (`r round(mean(rd.samples - stdized.rd), 5)`)\right)^2} = 
+`r round(sd.rd.boot, 5)`
 \end{aligned}
 $$
 
-(Note: I did both steps one and two using the R one-liner `sd.rd.boot <- sd(rd.samples - stdized.rd)`.)
+(In truth I did both steps one and two using the R one-liner `sd.rd.boot <- sd(rd.samples - stdized.rd)`.)
 
 ### Step Three
 
-I calculated the Wald 95% CI for the RD using the estimated standard error above:
+I calculated the Wald 95% CI for the RD using the estimated SE above:
 
 $$
-95\% \space CI_{\hat{\theta}} = 
+95\% \; CI_{\hat{\theta}} = 
 \hat{\theta} \pm 1.96*SE_{\hat{\theta}_i} = 
-stdized.rd  \pm 1.96 \times `r round(sd.rd.boot, 3)` = (`r round(rd.ci.norm.apx[1], 3)`, `r round(rd.ci.norm.apx[2], 3)`)
+`r round(stdized.rd, 5)`  \pm 1.96 \times `r round(sd.rd.boot, 3)` = (`r round(rd.ci.norm.apx[1], 3)`, `r round(rd.ci.norm.apx[2], 3)`)
 $$
 
 ### Assumptions
 
-For Wald CIs to be valid, the following assumptions must hold:
+For Wald CIs for the point estimate of the RD to be valid, the following assumptions must hold:
 
 1. The underlying population in the study must have been sampled randomly. (The bootstrapped samples from the study observations must also be drawn randomly, although this assumption is automatically pseudo-met via R's pseudo-random number generator.)  The original investigators met or didn't meet this assumption when they collected the data.
 
 2. The underlying observations in the study population must be independent of each other. (The bootstrapped samples from the study observations must also be independent of each other, although this assumption is also pseudo-met via R's pseudo-random number generator.) The original investigators met or didn't meet this assumption when they collected the data.
-
-3. The distribution of the RDs calculated from the bootstrapped samples, i.e., the sampling distribution, must be asymptotically normal, as confirmed by the plot of the distribution of the RDs in step two. In particular, it must be symmetric.  (This does not necessarily mean that the distribution of the original data has to be normal, only that the distribution of the RDs calculated from the bootstrapped samples has to be.)
-
 
 ```{r calculating cell counts, results=FALSE}
 
@@ -319,45 +316,26 @@ ideal_no_hyper_count
 
 ```
 
-4. The original dataset from which the bootstrap samples are drawn must contain sufficiently large numbers of cases and non-cases in both the exposed and unexposed categories.[^1]  Here we have 
-  + `r obese_hyper_count` obese participants with hypertension (exposed cases);
-  + `r obese_no_hyper_count` obese participants without hypertension (exposed non-cases);
-  + `r ideal_hyper_count` "ideal"-weight participants with hypertension (unexposed cases);
-  + `r ideal_no_hyper_count` "ideal"-weight participants without hypertension (unexposed cases);
+3. The original dataset from which the bootstrap samples are drawn must contain sufficiently large numbers of cases and non-cases in both the exposed and unexposed categories.[^3]  Here we have 
+   + `r obese_hyper_count` obese participants with hypertension (exposed cases);
+   + `r obese_no_hyper_count` obese participants without hypertension (exposed non-cases);
+   + `r ideal_hyper_count` "ideal"-weight participants with hypertension (unexposed cases);
+   + `r ideal_no_hyper_count` "ideal"-weight participants without hypertension (unexposed cases);
+   so this assumption also appears met.
 
-so this assumption also appears met.
+4. The distribution of the RDs calculated from the bootstrapped samples, i.e., the sampling distribution, must be asymptotically normal, as confirmed by the plot of the distribution of the RDs in step two. In particular, it must be symmetric.(This does not necessarily mean that the distribution of the original data has to be normal, only that the distribution of the RDs calculated from the bootstrapped samples has to be.)
 
-5. The RD cannot be too close to zero or one, particularly in small samples, lest the CIs inaccurately include invalid RDs below zero or above one.[^2]
+5. The point estimate of the RD must be (between but) not too close to -1 or 1, particularly in small samples, lest the CIs inaccurately include invalid RDs < -1 or > 1.[^4]
 
-[^1]: Greenland S. Interval estimation by simulation as an alternative to and extension of confidence intervals. International Journal of Epidemiology 2004;33(6):1389–97. doi:10.1093/ije/dyh276. (Page 390.)
+### Comparison of normal and bias-corrected and accelerated (BCA) CI
 
-[^2]: Carpenter J, Bithell J. Bootstrap confidence intervals: when, which, what? A practical guide for medical statisticians. Statistics in Medicine 2000;19(9):1141–1164. doi:10.1002/(SICI)1097-0258(20000515)19:9<1141::AID-SIM479>3.0.CO;2-F. (Page 1150.)
+The 95% CI for the RD using a Wald normal approximation is (`r round(rd.ci.norm.apx[1], 3)`, `r round(rd.ci.norm.apx[2], 3)`), compared to the bias-corrected and accelerated CI of (`r round(ci.rd.bca$bca[4], 3)`, `r round(ci.rd.bca$bca[5], 3)`). The Wald 95% CI is very close to the BCA CI, as expected given the large size of the dataset and normal distribution of the RDs calculated from bootstrap samples of the data. Moreover, the Wald CI is slightly higher than the BCA CI due to its assumption of symmetry around the point estimate, which ignores the slight left skew of the data. Thus the Wald CI effectively includes a bit too much of the right "hill" and too little of the left "tail" of the distribution compared to the BCA (which is essentially derived from percentiles of the actual data after correcting for bias and skewness).
 
+[^3]: Greenland S. Interval estimation by simulation as an alternative to and extension of confidence intervals. International Journal of Epidemiology 2004;33(6):1389–97. doi:10.1093/ije/dyh276. (Page 390.)
 
-### Comparison to the bias-corrected and accelerated CI
-
-The 95% CI for the RD using a normal approximation is (`r round(rd.ci.norm.apx[1], 3)`, `r round(rd.ci.norm.apx[2], 3)`), compared to the bias-corrected and accelerated CI of (`r round(ci.rd.bca$bca[4], 3)`, `r round(ci.rd.bca$bca[5], 3)`).
+[^4]: Carpenter J, Bithell J. Bootstrap confidence intervals: when, which, what? A practical guide for medical statisticians. Statistics in Medicine 2000;19(9):1141–1164. doi:10.1002/(SICI)1097-0258(20000515)19:9<1141::AID-SIM479>3.0.CO;2-F. (Page 1150.)
 
 \pagebreak
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # Question Four
 
@@ -383,28 +361,28 @@ $$ \hat{\theta} \pm 1.96 \times SE_{\hat{\theta}_i}, $$
 
 ### Step One
 
-I first calculated the mean of the differences between the natural logarithm of the original model-standardized point estimate of the RR $\ln(\hat{\theta}) = \ln(`1.388`) = 0.328$ and the natural logarithms of the bootstrapped point estimates of the model-standardized RR, $\overline{\Delta_{ln(\hat{\theta_i})}}$:
+I first calculated the mean of the differences between the natural logarithm of the original model-standardized point estimate of the RR $\ln(\hat{\theta}) = \ln(`r round(stdized.rr, 3)`) = `r round(log(stdized.rr), 5)`$ and the natural logarithms of the bootstrapped point estimates of the model-standardized RR, $\overline{\Delta_{ln(\hat{\theta_i})}}$:
 
 $$
 \overline{\Delta_{ln(\hat{\theta_i})}} = \frac{\sum\limits_{i = 1}^{n}(\ln(\hat{\theta}_i )-\ln(\hat{\theta}))}{n} = 
-\frac{\sum\limits_{i = 1}^{5000}(\ln(\hat{\theta}_i )-0.32785)}{5000} = -0.00108
+\frac{\sum\limits_{i = 1}^{5000}(\ln(\hat{\theta}_i )-`r round(log(stdized.rr), 5)`)}{5000} = `r round(mean(log(rr.samples) - log(stdized.rr)), 5)` 
 $$
 
 ### Step Two
 
-I used that mean $\overline{\Delta_{\ln(\hat{\theta_i})}}$ to calculate the sample standard deviation of the differences between the $\ln(\hat{\theta}_i)$s and $\ln(\hat{\theta})$, as the best possible estimate of the standard error of that estimate, ($SE_{\ln(\hat{\theta}_i)}$): 
+I used that mean $\overline{\Delta_{\ln(\hat{\theta_i})}}$ to calculate the sample standard deviation of the differences between the $\ln(\hat{\theta}_i)$s and $\ln(\hat{\theta})$, in order to use it as the best possible estimate of the standard error of that estimate, ($SE_{\ln(\hat{\theta}_i)}$): 
 
 $$
 \begin{aligned}
 SE_{\ln(\hat{\theta}_i)} 
 \approx sd(\ln(\hat{\theta}_i) - \ln(\hat{\theta})) &=  
 \sqrt{\frac{1}{n-1} \sum\limits_{i = 1}^{n}\left(\left(\ln(\hat{\theta}_i )-\ln(\hat{\theta})\right) - \overline{\Delta_{\ln(\hat{\theta_i})}}\right)^2} \\ 
-&= \sqrt{\frac{1}{5000-1} \sum\limits_{i = 1}^{5000}\left(\left(\ln(\hat{\theta}_i)-0.32785\right) - (-0.00108)\right)^2} = 
-`r round(sd.log.rr.boot, 3)`
+&= \sqrt{\frac{1}{5000-1} \sum\limits_{i = 1}^{5000}\left(\left(\ln(\hat{\theta}_i)-0.32785\right) - (`r round(mean(log(rr.samples) - log(stdized.rr)), 5)`)\right)^2} = 
+`r round(sd.log.rr.boot, 5)`
 \end{aligned}
 $$
 
-(Note: I did both steps one and two using the R one-liner `sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))`.)
+(I did both steps one and two using the R one-liner `sd.log.rr.boot <- sd(log(rr.samples) - log(stdized.rr))`.)
 
 ### Step Three
 
@@ -421,61 +399,34 @@ $$
 I then exponentiated the CI to get it on the scale of the original RR:
 
 $$
-95\% \space CI_{\hat{\theta}} = e^{\ln(\hat{\theta}) \pm 1.96*SE_{\ln(\hat{\theta}_i)}} = 
+95\% \; CI_{\hat{\theta}} = e^{\ln(\hat{\theta}) \pm 1.96*SE_{\ln(\hat{\theta}_i)}} = 
 (e^{`r round(log.rr.ci.norm.apx[1], 3)`}, e^{`r round(log.rr.ci.norm.apx[2], 3)`}) = 
 (`r round(rr.ci.norm.apx[1], 3)`, `r round(rr.ci.norm.apx[2], 3)`)
 $$
 
 ### Assumptions
 
-For Wald CIs to be valid, the following assumptions must hold:
+For Wald CIs for the point estimate of the RR to be valid, the following assumptions must hold:
 
-1. The underlying population in the study must have been sampled randomly. (The bootstrapped samples from the study observations must also be drawn randomly, although this assumption is automatically pseudo-met via R's pseudo-random number generator.)  The original investigators met or didn't meet this assumption when they collected the data.
+1. Assumption 1 from Question 3.
 
-2. The underlying observations in the study population must be independent of each other. (The bootstrapped samples from the study observations must also be independent of each other, although this assumption is also pseudo-met via R's pseudo-random number generator.) The original investigators met or didn't meet this assumption when they collected the data.
+2. Assumption 2 from Question 3.
 
-3. The distribution of the natural logarithms of the RRs calculated from the bootstrapped samples, i.e., the sampling distribution, must be asymptotically normal, as confirmed by the plot of the distribution of the log RRs in step two. In particular, it must be symmetric.  (This does not necessarily mean that the distribution of the original data has to be normal, only that the distribution of the log RRs calculated from the bootstrapped samples has to be.)
+3. Assumption 3 from Question 3.
 
-4. The original dataset from which the bootstrap samples are drawn must contain sufficiently large numbers of cases and non-cases in both the exposed and unexposed categories.[^1]  Here we have 
-  + `r obese_hyper_count` obese participants with hypertension (exposed cases);
-  + `r obese_no_hyper_count` obese participants without hypertension (exposed non-cases);
-  + `r ideal_hyper_count` "ideal"-weight participants with hypertension (unexposed cases);
-  + `r ideal_no_hyper_count` "ideal"-weight participants without hypertension (unexposed cases);
+4. The distribution of the natural logarithms of the RRs calculated from the bootstrapped samples, i.e., the sampling distribution, must be asymptotically normal, as confirmed by the plot of the distribution of the log RRs in step two. In particular, it must be symmetric.  (This does not necessarily mean that the distribution of the original data has to be normal, only that the distribution of the log RRs calculated from the bootstrapped samples has to be.)[^5]
 
-so this assumption also appears met.
+5. The RR cannot be too close to zero, particularly in small samples, lest the CIs inaccurately include invalid negative RRs.[^6]
 
-5. The RR cannot be too close to zero, particularly in small samples, lest the CIs inaccurately include invalid negative RRs.[^2]
+### Comparison of normal and BCA CIs
 
-[^1]: Greenland S. Interval estimation by simulation as an alternative to and extension of confidence intervals. International Journal of Epidemiology 2004;33(6):1389–97. doi:10.1093/ije/dyh276. (Page 390.)
+The 95% CI for the RR using a Wald normal approximation is (`r round(rr.ci.norm.apx[1], 3)`, `r round(rr.ci.norm.apx[2], 3)`), compared to the bias-corrected and accelerated CI of (`r round(ci.rr.bca$bca[4], 3)`, `r round(ci.rr.bca$bca[5], 3)`). The Wald 95% CI for the RR is again very close to the BCA CI, as expected given the large size of the dataset and normality of the RR bootstrap sampling distribution. Moreover, the Wald CI is again slightly higher than the BCA CI due to its assumption of symmetry around the point estimate, which ignores the slight left skew of the data. Thus the Wald CI effectively includes a bit too much of the right "hill" and too little of the left "tail" of the distribution compared to the BCA (which is essentially derived from percentiles of the actual data after correcting for bias and skewness).
 
-[^2]: Carpenter J, Bithell J. Bootstrap confidence intervals: when, which, what? A practical guide for medical statisticians. Statistics in Medicine 2000;19(9):1141–1164. doi:10.1002/(SICI)1097-0258(20000515)19:9<1141::AID-SIM479>3.0.CO;2-F. (Page 1150.)
+[^5]: Greenland S. Interval estimation by simulation as an alternative to and extension of confidence intervals. International Journal of Epidemiology 2004;33(6):1389–97. doi:10.1093/ije/dyh276. (Page 390.)
 
-### Comparison with bias-corrected and accelerated CIs
-
-The 95% CI for the RR using a normal approximation is (`r round(rr.ci.norm.apx[1], 3)`, `r round(rr.ci.norm.apx[2], 3)`), whereas
-the bias-corrected and accelerated CI of (`r round(ci.rr.bca$bca[4], 3)`, `r round(ci.rr.bca$bca[5], 3)`).
+[^6]: Carpenter J, Bithell J. Bootstrap confidence intervals: when, which, what? A practical guide for medical statisticians. Statistics in Medicine 2000;19(9):1141–1164. doi:10.1002/(SICI)1097-0258(20000515)19:9<1141::AID-SIM479>3.0.CO;2-F. (Page 1150.)
 
 \pagebreak
-
-```{r}
-
-# My Questions
-
-## Correct numbers?
-
-## Is this a CID/CIR?  How long was the study period?
-
-## More on question two?
-
-## does prettiness of graph matter
-
-## if we're graphing the risk ratio to show normality, why are we doing calculations on the log of it?
-
-## assumptions for normal approximation
-
-# Appendix: R code
-
-```
 
 
 ```{r ref.label=knitr::all_labels(), echo = T, eval = F}

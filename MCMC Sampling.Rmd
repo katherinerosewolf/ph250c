@@ -1,0 +1,222 @@
+---
+title: "Bayesian Fundamentals"
+author: "Patrick T. Bradshaw"
+date: "2/21/2020"
+output:
+  pdf_document:
+    latex_engine: pdflatex
+    md_extensions: +inline_notes
+    number_sections: no
+  html_document:
+    df_print: paged
+  word_document: default
+header-includes: \usepackage{fancyhdr} \usepackage{soul}
+mainfont: Palatino
+mathfont: Palatino
+monofont: Courier
+fontsize: 11pt
+sansfont: Helvetica
+subtitle: "PB HLTH 250C Lab Activity: Markov-Chain Monte Carlo sampling"
+fontfamily: mathpazo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+```
+# Bayesian Logistic Regression
+We will work with with the data from the esophageal cancer case-control study (see Vittinghoff (2012), Ch 5, section 3) to fit a logistic regression model for the relationship between smoking and risk of esophageal cancer. 
+
+Recall, in a Bayesian analysis we want to characterize the posterior distribution of the model parameters (or specifically, a target parameter such as an OR), given the data. If the form of the posterior isn't known then we have to use more sophisticated algorithms (Markov-Chain Monte-Carlo) to generate random samples. Most of the packages mentioned (JAGS, Nimble, WinBUGS, OpenBUGS) use some variation of the Metropolis-Hastings algorithm\footnote{Gibbs sampling is a special case of Metropolis.}\footnote{For more details, see: Chib, Siddhartha, and Edward Greenberg. "Understanding the Metropolis-Hastings algorithm." \emph{The American Statistician} 49.4 (1995): 327-335.} to generate samples. In class we have been using JAGS as a tool to sample from the posterior, but it can be helpful to understand the algorithm by coding our own version.
+
+## Metropolis Sampling 
+The idea behind the Metropolis algorithm is pretty simple; given a current value for the parameters $\beta^{(s)}$:
+\begin{enumerate}
+  \item \textbf{Propose} a new value ($\beta^*$) by randomly generating one \emph{conditional on the current value $\beta^{(s)}$} (The proposal distribution used to generate potential values of $\beta$ is \emph{not} the same thing as the prior for $\beta$, but it might be the same type of distribution).
+  \item Randomly decide \textbf{whether to keep (accept)} this proposed value of $\beta^{(s)}$ (or stay with the current value) \emph{with greater probability of acceptance for $\beta^{(s)}$ values that correspond to larger values of the posterior than others}.
+\end{enumerate}
+The last point is key--it increases the likelihood of generating (or retaining) samples with higher posterior probability! The retained samples should constitute a random sample from the posterior distribution of $\beta$.
+
+### The Posterior Distribution
+Remember that the posterior distribution is defined by the product of the likelihood (for our case-control study, defined by a standard logistic regression model), and the prior (our initial beliefs about the parameters in our model). We can express this as:
+\begin{equation}\label{posterior}
+    p(\beta | \mathbf{y}, \mathbf{x}) \propto L(\beta|\mathbf{y}, \mathbf{x})\times p(\beta)
+\end{equation}
+where, for our example: $(\mathbf{y},\mathbf{x})$ are the observed outcome (case-control indicator) and covariates (tobacco use, age), respectively, and $\beta = (\beta_1, \ldots, \beta_K)$ is the vector of regression parameters (e.g. log-OR). 
+
+More specifically:
+
+\begin{enumerate}
+  \item \textbf{The likelihood} ($L(\beta|\mathbf{y}, \mathbf{x})$) is defined by the logistic regression model:
+    \begin{equation}\label{outcome}
+        \mathrm{logit}(\pi_i) = \mathrm{x}_i\beta \text{ for } i = 1,\ldots, N
+    \end{equation}
+    with $\mathrm{y}_i \sim \mathrm{Binomial}(1,\pi_i)$. (Assume that $x_1=1$ for the intercept.) More specifically, for a Bernoulli (Binomial with 1 trial), the likelihood is 
+    \begin{equation}\label{likelihood}
+        L(\beta|\mathbf{y},\mathbf{x}) = \prod_{i=1}^N \pi_i^{y_i}\, (1-\pi_i)^{1-y_i}
+    \end{equation}
+    with $\pi_i$ dependent on $\beta$ as described in equation (\ref{outcome}).
+  \item \textbf{The prior for the model paramters} ($p(\beta)$) will be taken to be independently distributed normal random variables:
+    \begin{equation}\label{parameters}
+        \beta_j \sim \mathrm{N}(\mu_j, \tau_j)  \text{ for } j = 1,\ldots, K    
+    \end{equation}
+    where $\mu_j$ and $\tau_j$ are the prior mean and precision (1/variance), respectively, for coefficient $j$. More specifically, because they are independent, the density of the multivariate density for $\beta$ is just the product of univariate densities:
+    \begin{equation}\label{prior}
+        p(\beta) = \prod_{j=1}^K f(\beta|\mu_j, \tau_j)
+    \end{equation}
+    with $f(\cdot)$ the normal density function.
+\end{enumerate}
+
+In R we can calculate the values equations (\ref{likelihood}) and (\ref{prior}) for specific values of $\beta$ using the probability mass and density functions `dbinom` and `dnorm`, respectively.
+
+-------------- 
+First, define a handy function, load in libraries, and read in the data:
+
+```{r}
+expit <- function(x) exp(x)/(1+exp(x))
+library(foreign) # to read in foreign datasets
+library(MASS)    # For multivariate normal RNG
+library(coda)    # to look at convergence diagnostics
+data.esoph <- read.dta("esoph.dta")
+```
+
+Next, define a function for the kernel of the posterior (the part \emph{proportional to} the posterior for $\beta$ in equation (\ref{posterior})). It's more computationally efficient to work on the log-scale, so calculate the kernel of the log-posteior of $\beta$:
+
+```{r}
+klogposterior <- function(beta,y,x){
+
+  xbeta <- x %*% beta # The linear predictor of the regression model
+  pi <- expit(xbeta) # Probability of success given beta, x
+
+  # Constructing the log-prior kernel:
+  ll <- sum(dbinom(y, 1, pi, log=TRUE)) # Log-likelihood
+  lprior <- sum(dnorm(beta, mu.beta, sd=sqrt(1/tau.beta))) # Log-prior
+  
+  # Because we/re on the log scale, we ADD the log-prior 
+  # to the log-likelihood to return the kernel of the log-posterior
+  return(ll + lprior) 
+}
+
+```
+
+This is essentially what JAGS does with the distribution statements (those involving \~) in the function we provide--they tell it how to evaluate the relevant pieces of the posterior.
+
+## The Analysis
+From the esophageal cancer data, create the model matrix for the covariates ($\mathbf{x}$),\footnote{Scaling and centering continuous variables can help with convergence.} and pull out the outcome variable (case/control status, $\mathbf{y}$):
+```{r}
+x <- model.matrix(~1 + factor(tobgp) + scale(age), data=data.esoph)
+y <- data.esoph$case
+```
+
+For $\beta$, we will specify hyperparameters for an uninformative Normal prior ($\mu=0$ and $\tau=.001$ for all $\beta_j$):
+```{r}
+mu.beta <- rep(0, ncol(x)) # A vector of zeroes
+tau.beta <- rep(0.001, ncol(x)) # A vector of 0.001 (prior variances=1000)
+```
+
+Some usual bookkeeping to set up the simulation:
+```{r}
+set.seed(123)
+N.samples <- 100000
+
+# Initialize a storage matrix for your samples:
+beta.s <- matrix(NA, ncol=ncol(x), nrow=N.samples)
+colnames(beta.s) <- c("Intercept","Tobacco Grp 2", "Tobacco Grp 3", 
+                      "Tobacco Grp 4", "Age (standardized)")
+accept <- rep(NA, N.samples) # To keep track of acceptances vs. rejections
+```
+
+Now we code the Metropolis-Hastings algorithm. For the proposal step, we randomly generate a potential value for $\beta$ given the current value. Details can be found in the Chib and Greenberg paper, but we will use a normal distribution with mean equal to the current value, and variance $\delta$:
+\begin{equation}
+    \beta^{*} \sim N(\beta^s, \delta)
+\end{equation}
+The variance of this distribution ($\delta$) is referred to as the \emph{tuning parameter}. It governs how quickly we explore the parameter space; larger values for `delta` will cause the proposal distribution to "suggest" a wider array of values, but it makes the algorithm very inefficient by making it more likely to sample extreme values that will be rejected. Small values of `delta` conversely can cause the proposal to suggest more values near the mean (the current $\beta^{(s)}$), making the sample highly correlated. Finding a good value takes some trial-and-error: in practice one could do a few short runs of the sampler and use a value for $\delta$ that yielded an acceptance probability of around 50\% (I've done this for you already).
+
+```{r}
+delta <- 5e-3 
+
+# Create a diagonal matrix since we're 
+# drawing proposals from multivariate normal
+DELTA <- diag(delta, ncol(x)) 
+```
+
+We decide to keep the proposed value of $\beta^*$ with probability equal to minimum of the ratio of the posterior densities evaluated at the proposal value and current value, or 1:
+\begin{equation*}
+\begin{split}
+    r & = \frac{p(\beta^*|\mathbf{y},\mathbf{x})}{p(\beta^{(s)}|\mathbf{y},\mathbf{x})} \\
+    a & = \mathrm{Binomial}(1,\min(r,1))
+\end{split}
+\end{equation*}
+where $a=1$ means we keep the proposed value, otherwise we carry the current value forward. The term $r$ is the acceptance rate, and this gives greater probability to keeping the proposed value if it corresponds to a value of the posterior close to the current value (capped at 1 when the acceptance indicator is drawn, since it's possible for $r>1$).
+
+Coding this up:
+```{r}
+# Set the initial value to the mean (arbitrarily) and accept
+beta.s[1,] <- mu.beta 
+accept[1] <- 1
+
+for (i in 2:N.samples){
+  # Generate sample from proposal distribution,
+  # conditional on the last sample:
+  beta.star <- mvrnorm(1, beta.s[(i-1),], DELTA)
+  
+  # Posterior at current value of beta.s:
+  lp.current <- klogposterior(beta.s[(i-1),], y, x)
+  
+  # Posterior at proposed value of beta.star:
+  lp.proposed <- klogposterior(beta.star, y, x)
+
+  # Create acceptance ratio r
+  # (ratio of posterior probabilities):
+  r <- exp(lp.proposed - lp.current)
+  
+  # Randomly generate acceptance indicator
+  # from Bernoulli (Binomial w/ n=1 trial)
+  # w/ probability = min(acceptance ratio, 1)
+  accept[i] <- rbinom(1,1,min(r,1)) 
+  
+  # If acceptance indicator = 1, then keep proposed value
+  # Else carry the current value foward.
+  ifelse(accept[i] == 1, 
+         beta.s[i,] <- beta.star, 
+         beta.s[i,] <- beta.s[(i-1),])
+}
+```
+
+### Summarize the samples you just obtained
+Calculate the proportion of samples accepted (retained) to see how efficient the algorithm is (try modifying `delta` above to see the effect and what it does to the distribution of samples).
+```{r}
+mean(accept)
+```
+
+Plot the entire Markov chain for each variable and examine their behavior. Note that there's a "jump" at the beginning of each chain as it finds its stationary distribution (it doesn't always happen this quickly).
+```{r}
+plot(as.mcmc(beta.s))
+```
+
+Now, drop the first half of the samples as "burn-in" and summarize the posterior distribution (this is probably overkill here, but doesn't hurt anything). Compare to the JAGS output for this analysis from class (note that the intercept and age coefficients will be different because we scaled the age variable; focus on the tobacco group coefficients).
+
+```{r}
+n.thin <- 1 # Keep every n.thin observation 
+
+# Create an index to identify post-burn-in samples to keep:
+index.postburnin <- seq(floor(N.samples/2)+1, N.samples, by=n.thin)
+
+# Sample post-burn-in betas:
+beta.s.postburn <- beta.s[index.postburnin,]
+
+# Derive odds ratios:
+OR.s.postburn <- exp(beta.s.postburn)
+
+# Summarize 
+cbind(colMeans(beta.s.postburn), # Posterior means of beta
+      t(apply(beta.s.postburn,2,quantile,c(0.025, 0.5, 0.975)))) # Posterior quantiles
+plot(as.mcmc(beta.s.postburn))
+
+t(apply(OR.s.postburn,2,quantile,c(0.025, 0.5, 0.975))) # Posterior quantiles of OR
+```
+
+\textbf{On your own}: modify the above code--try changing the tuning parameter `delta` (increasing and decreasing) to see the effect on the convergence. You could also modify the hyperparameters on the prior for $\beta$, or try not scaling the age variable.
+
+# In Closing
+You will probably use standard software  most of the time for MCMC sampling; their algorithms are more robust than this simple version, and you don't usually have to worry about tuning parameters. However, walking through an algorithm like this should help give you an idea what they are doing, and you may find this approach useful for simulations outside of a Bayesian framework.
+
