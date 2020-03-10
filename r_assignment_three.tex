@@ -119,7 +119,7 @@
 \hypertarget{question-one}{%
 \subsection{Question One}\label{question-one}}
 
-\textbf{Using the R code provided, complete Table 1 using the posterior samples of the odds ratios. \textit{(20 points)}}
+\textbf{Using the R code provided, complete Table 1 using the posterior samples of the odds ratios (ORs). \textit{(20 points)}}
 
 \begin{landscape}
 \begin{table}
@@ -150,15 +150,15 @@ College plus (versus < high school education) & 0.5459 (0.4398, 0.6721) & 0.5439
 
 \textit{Calculations}
 
-Let \(\beta_s\) denote the normal prior for the log odds ratio comparing
-the odds (risk) of overweight (body mass index \textgreater{} 25) in a
+Let \(\beta_s\) denote the normal prior for the log OR comparing the
+odds (risk) of overweight (body mass index \textgreater{} 25) in a
 smoker to that in a nonsmoker. The parameterization for \(\beta_s\)
 given for IP1 states that \(\beta_s\) is normally distributed with
 hyperparameters mean \(\mu_s\) and variance \(\sigma^2_s\), i.e.,
-\(\beta_s \sim N(\mu_s, \sigma^2_s)\), such that the odds ratio
-\(e^{\beta_s}\), or the natural exponentiation of the mean of the
-log-OR, is 2, i.e., \(e^{E[\beta_s]} = e^{\mu_s} = 2\), and \(\beta_s\)
-has a variance of 1000, i.e., \(\sigma^2_s = 1000\).
+\(\beta_s \sim N(\mu_s, \sigma^2_s)\), such that the OR \(e^{\beta_s}\),
+or the natural exponentiation of the mean of the log-OR, is 2, i.e.,
+\(e^{E[\beta_s]} = e^{\mu_s} = 2\), and \(\beta_s\) has a variance of
+1000, i.e., \(\sigma^2_s = 1000\).
 
 To get the mean of the log-OR, then, we take the natural logarithm of
 the natural exponentiation of the mean of the log-OR, i.e.,
@@ -237,6 +237,14 @@ to assign the peak(s) and thus the posterior median.
 
 \textbf{Using the trace plots, density plots and autocorrelation plots (focus on 1st chain) from the diagnostics for the first model (“Vague prior”), briefly describe any evidence of convergence (or lack of convergence) that you see. Attach these plots (2 pages for trace/density plots; 1 page for autocorrelation plots). \textit{(10 points)}}
 
+All signs point toward convergence.
+
+\begin{itemize}
+  \item The traceplots for all the parameters and the posterior mean deviance ($-2\log(p(\textbf{y}|\theta))$ look random around a horizontal line without any snaking, periodicity, trending, or sharp jumps, i.e., mostly like fuzzy caterpillars, a sign of convergence.
+  \item The density plots showing an empirical density function for each parameter and the posterior mean deviance all look smooth and unimodal with ranges limited to reasonable log-ORs between -1 and just above 1 (except for the deviance, which ranges from 5530 to 5570, also reasonable), all traits that do not raise red flags for non-convergence. 
+  \item The autocorrelation plots die down to near zero almost immediately for every parameter, showing that for lags $k$ of $k > 1$, observations are not correlated, also a sign of convergence.
+\end{itemize}
+
 \includegraphics{Traceplot_LogisticReg1.pdf}
 \includegraphics{Traceplot_LogisticReg2.pdf}
 \includegraphics{ACF_LogisticReg.pdf}
@@ -252,8 +260,8 @@ The Geweke test tests whether the Markov Chain is constant between early
 and later parts of the sequence of numbers by comparing subsamples of
 the random samples for each parameter, here comparing the first 10\% of
 the chain to the last half. It outputs the z-statistic and indicates
-non-convergence is indicated if the test-statistic is \textgreater{}
-1.96 in absolute value.\footnote{Lecture 5, slide 46.}
+non-convergence if the test-statistic is \textgreater{} 1.96 in absolute
+value.\footnote{Lecture 5, slide 46.}
 
 The Geweke test results here are:
 
@@ -284,6 +292,10 @@ The Geweke test results here are:
 ##    b[1]    b[2]    b[3]    b[4]    b[5]    b[6]    b[7] 
 ##  0.6734  0.1043  0.3256  0.2065 -0.7789 -1.1426 -1.2885
 \end{verbatim}
+
+None of these results for any of the parameters in any of the three
+chains run are \textgreater{} 1.96, so the Geweke test does not show
+evidence of lack of convergence. Woohoo!
 
 \pagebreak
 

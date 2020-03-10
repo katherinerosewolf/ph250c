@@ -138,7 +138,7 @@ overweight.inits <- function() {list (b = rnorm(Nx, 0 , sd = 0.5))}
 ```
 
 
-```{r run the mcmc algorithm and summarize}
+```{r run the mcmc algorithm and summarize, cache=TRUE}
 
 set.seed(123)
 overweight.sim <- jags(data = overweight.data,
@@ -185,7 +185,7 @@ geweke.diag(overweight.mcmc[,1:7]) # Geweke test
 
 ```
 
-```{r informative prior one}
+```{r informative prior one, cache=TRUE}
 
 # Informative prior 1 (Change prior mean to log(2) for b[2])
 mu[2] <- log(2)
@@ -202,7 +202,7 @@ print(overweight.sim.inform1, digits = 4)
 ```
 
 
-```{r informative prior two}
+```{r informative prior two, cache=TRUE}
 
 # Informative prior 2 (Change prior precision to 1/0.1225 vor beta[4])
 sd.prior <- (log(2.67) - log(1.5))/(2*1.96) # SD for beta2 on log-scale
