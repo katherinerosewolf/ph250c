@@ -122,6 +122,15 @@ Thus the prior estimate for $e^{\beta_s}$ and 95\% prior interval are $`r info1_
 
 \pagebreak
 
+```{r}
+
+knitr::include_graphics(
+  path = file.path("pdfs", 
+                   "TraceplotLogisticReg1.pdf"))
+
+```
+
+
 # R code
 
 ```{r ref.label=knitr::all_labels(), echo = T, eval = F}

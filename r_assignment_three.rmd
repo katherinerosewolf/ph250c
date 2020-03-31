@@ -34,6 +34,7 @@ output:
     keep_tex: yes
     fig_caption: false
   latex_engine: xelatex
+  
 ---
 
 ```{r setup, include=FALSE}
@@ -151,23 +152,30 @@ print(overweight.sim, digits = 4)
 
 ```
 
-```{r assess convergence of above models via trace plots autocorrelation plots and Geweke test}
+```{r}
+
+dir.create("pdfs")
+
+```
+
+
+```{r assess convergence of above models via trace plots autocorrelation plots and Geweke test, cache=TRUE}
 
 overweight.mcmc <- as.mcmc(overweight.sim)
 
 # Traceplot and density plots for regression coefficients
 # code will save to PDF in current directory.
 # Execute "plot" commands only to plot to screen.
-pdf("Traceplot_LogisticReg1.pdf") # Write what comes next to PDF file
+pdf(file = file.path("pdfs", "TraceplotLogisticReg1.pdf")) # Write what comes next to PDF file
 plot(overweight.mcmc[1][, 1:4]) # For beta1-4
+dev.off()
 
-pdf("Traceplot_LogisticReg2.pdf") # Write what comes next to PDF file
+pdf(file = file.path("pdfs", "TraceplotLogisticReg2.pdf")) # Write what comes next to PDF file
 plot(overweight.mcmc[1][, 5:8]) # For beta5-7 and deviance
-
 dev.off() # Stop writing to the PDF file
 
 # Autocorrelation plots for the regression coefficients
-pdf("ACF_LogisticReg.pdf")
+pdf(file = file.path("pdfs", "ACFLogisticReg.pdf"))
 par(omi=c(.25, .25, .25, .25)) # Create an outer margin (room for title)
 
 autocorr.plot(overweight.mcmc[1][, 1:7]) # For chain 1
@@ -219,8 +227,6 @@ overweight.sim.inform2 <- jags(data = overweight.data,
 print(overweight.sim.inform2, digits=4)
 
 ```
-
-\pagebreak
 
 # Questions
 
@@ -444,18 +450,18 @@ info2_college <-
 
 \begin{landscape}
 \begin{table}
-\begin{minipage}{\textwidth}
-\caption{Posterior median and 95\% credible intervals for odds ratios from logistic regression model of overweight status on smoking, controlling for age, sex, and education level.}
+\begin{minipage}{9in}
+\caption{Posterior median and 95\% credible intervals for odds ratios (ORs) from logistic regression model of overweight status (body mass index (BMI) $\geq$ 25) on smoking, controlling for age, sex, and education level.}
 \begin{tabular}{llll}
 \hline
-  Variable & Vague prior & Informative Prior 1\footnote{Prior mean for OR of current smoking = 2, prior variance = 1000.} & Informative Prior 2\footnote{Prior mean for OR of current smoking = 2, prior variance = 0.02. (I believe that the prior variance originally listed on the assignment, 0.08, was an error, and that it arose from a given prior interval for Informative Prior 2 of (1, 3), possibly from a prior version of this assignment, instead of (1.5, 2.67). Proof: $(\log(3)-\log(1))/(2*1.96) = `r signif(((log(3)-log(1))/(2*1.96))^2, digits = 2)`$ whereas $(\log(2.67)-\log(1.5))/(2*1.96) = `r signif(sd.prior^2, 2)`$.} \\
+  Variable & Vague prior & Informative Prior 1\footnote{Prior mean for OR of current smoking = 2, prior variance = 1000.} & Informative Prior 2\footnote{Prior mean for OR of current smoking = 2, prior variance = 0.02. (I believe that the prior variance originally listed on the assignment, 0.08, was an error, and that it arose from a given prior interval for Informative Prior 2 of (1, 3), possibly from a prior version of this assignment, instead of (1.5, 2.67). Evidence: $(\log(3)-\log(1))/(2*1.96) = `r signif(((log(3)-log(1))/(2*1.96))^2, digits = 2)`$, whereas $(\log(2.67)-\log(1.5))/(2*1.96) = `r signif(sd.prior^2, 2)`$.} \\
   \cline{1-4}
 Current smoker (versus not)  & `r vague_smoke` & `r info1_smoke` & `r info2_smoke` \\
 Age (per year increase)      & `r vague_age` & `r info1_age` & `r info2_age` \\
 Male sex (versus female) & `r vague_sex` & `r info1_sex` & `r info2_sex` \\
-High school education (versus < high school education) & `r vague_high` & `r info1_high` & `r info2_high` \\
-Some college (versus < high school education) & `r vague_some` & `r info1_some` & `r info2_some` \\
-College plus (versus < high school education) & `r vague_college` & `r info1_college` & `r info2_college` \\
+High school education (HSE) (versus < HSE) & `r vague_high` & `r info1_high` & `r info2_high` \\
+Some college (versus < HSE) & `r vague_some` & `r info1_some` & `r info2_some` \\
+College plus (versus < HSE) & `r vague_college` & `r info1_college` & `r info2_college` \\
 \hline
 \end{tabular}
 \end{minipage}
@@ -470,11 +476,11 @@ College plus (versus < high school education) & `r vague_college` & `r info1_col
 
 \textit{Calculations}
 
-Let $\beta_s$ denote the normal prior for the log OR comparing the odds (risk) of overweight (body mass index > 25) in a smoker to that in a nonsmoker. The parameterization for $\beta_s$ given for IP1 states that $\beta_s$ is normally distributed with hyperparameters mean $\mu_s$ and variance $\sigma^2_s$, i.e., $\beta_s \sim N(\mu_s, \sigma^2_s)$, such that the OR $e^{\beta_s}$, or the natural exponentiation of the mean of the log-OR, is 2, i.e., $e^{E[\beta_s]} = e^{\mu_s} = 2$, and $\beta_s$ has a variance of 1000, i.e., $\sigma^2_s = 1000$.
+Let $\beta_s$ denote the normal prior for the log OR comparing the odds (risk) of overweight (body mass index (BMI) $\geq$ 25) in a smoker to that in a nonsmoker. The parameterization for $\beta_s$ given for IP1 states that $\beta_s$ is normally distributed with hyperparameters mean $\mu_s$ and variance $\sigma^2_s$, i.e., $\beta_s \sim N(\mu_s, \sigma^2_s)$, such that the OR $e^{\beta_s}$ (formally the natural exponentiation of the mean of the log-OR) is 2, i.e., $e^{E[\beta_s]} = e^{\mu_s} = 2$, and $\beta_s$ has a variance of 1000, i.e., $\sigma^2_s = 1000$.
 
 To get the mean of the log-OR, then, we take the natural logarithm of the natural exponentiation of the mean of the log-OR, i.e., $\mu_s = \log{e^{\mu_{s}}} = \log(2)$.
 
-To get the standard deviation of $\beta_s$, $\sigma_s$, we take the square root of the variance $\sigma^2_s$, i.e., $\sigma_s = \sqrt{\sigma^2_s} = \sqrt{1000}$.
+To get the standard deviation of $\beta_s$, we take the square root of the variance $\sigma^2_s$, i.e., $\sigma_s = \sqrt{\sigma^2_s} = \sqrt{1000}$.
 
 Then we can calculate the prior 95\% interval for the log-OR by taking 1.96 standard deviations above and below its mean:
 \begin{itemize}
@@ -503,43 +509,49 @@ Thus the prior 95\% interval for IP1 is $(`r info1_prior_95_lower`, `r info1_pri
 
 \textit{Comparisons}
 
-The prior 95\% interval drawn from IP1 is $(`r info1_prior_95_lower`, `r info1_prior_95_upper`)$, corresponding to a variance of 1000, whereas IP2 assumes a prior 95\% interval of $(1.5, 2.67)$, which, under the assumption of a normal distribution, yields a variance of only $(\log(2.67)-\log(1.5))/(2*1.96) = `r signif(sd.prior^2, 3)`$. The drastic difference in variances determines a drastic difference in the size of the prior intervals for which we are 95\% confident that we have captured the true parameter: the wide, flat probability distribution of IP1 assigns almost equal proabability of the true parameter value appearing among a wide range of values, whereas IP2's narrow, tall probability distribution assigns much higher probabilities of the true value appearing the closer one gets to its mean.
+The prior 95\% interval drawn from IP1 is $(`r info1_prior_95_lower`, `r info1_prior_95_upper`)$, corresponding to a variance of 1000, whereas IP2 assumes a prior 95\% interval of $(1.5, 2.67)$, which, under the assumption of a normal distribution, yields a variance of only $(\log(2.67)-\log(1.5))/(2*1.96) = `r signif(sd.prior^2, 3)`$. The drastic difference in variances determines a drastic difference in the size of the prior intervals that we think contain the true parameter $e^{\beta_s}$: the wide, flat probability distribution of IP1 assigns almost equal proabability of the true parameter value appearing among a wide range of values, whereas the narrow, tall probability distribution of IP2 assigns much higher probabilities of the true value appearing as one approaches its mean.
 
 \pagebreak
 
 ## Question Three
 
-\textbf{What seems to be more influential on the smoking effect, Informative Prior 1 or Informative Prior 2? In \textit{one sentence}, briefly explain what you think is happening? \textit{(5 points)}}
+\textbf{What seems to be more influential on the smoking effect, Informative Prior 1 or Informative Prior 2? In \textit{one sentence}, briefly explain what you think is happening. \textit{(5 points)}}
 
 \textit{Statement}
 
-The model run using IP2 gives an estimate of the posterior median closer to 2 but a slightly larger confidence interval around it, `r info2_smoke`, than the model run using IP1, `r info1_smoke`, showing that IP2 is more influential on the smoking effect than IP1.
+The model run using IP2 gives an estimate of the posterior median for $e^{\beta_s}$ closer to 2 but with a slightly larger prior 95\% interval around it, `r info2_smoke`, than the model run using IP1, `r info1_smoke`, showing that IP2 is more influential on the smoking effect than IP1;
 
 \textit{Explanation}
 
-IP2 is more influential because its distribution has a high peak at and assigns high probabilities to values close to its mean (95\% of the probability is between 1.5 and 2.67!), which pulls the posterior median toward it, whereas IP1's much more widely distributed probability density assigns almost equal probability to the existence of the true mean anywhere in a big range from `r info1_prior_95_lower` to `r info1_prior_95_upper`, allowing the new data more latitude to assign the peak(s) and thus the posterior median.
+The distribution of IP2 has a high peak at and assigns high probabilities to values close to its mean (95\% of the probability distribution is between 1.5 and 2.67!), which pulls the posterior median toward that mean, whereas IP1's much more widely distributed probability density assigns almost equal probability across a big range from `r info1_prior_95_lower` to `r info1_prior_95_upper`, allowing the new data more latitude to assign the peak(s) and thus the posterior median.
 
 \pagebreak
 
 ## Question Four
 
-\textbf{Using the trace plots, density plots and autocorrelation plots (focus on 1st chain) from the diagnostics for the first model (“Vague prior”), briefly describe any evidence of convergence (or lack of convergence) that you see. Attach these plots (2 pages for trace/density plots; 1 page for autocorrelation plots). \textit{(10 points)}}
+\textbf{Using the trace plots, density plots, and autocorrelation plots (focus on 1st chain) from the diagnostics for the first model (“Vague prior”), briefly describe any evidence of convergence (or lack of convergence) that you see. Attach these plots (2 pages for trace/density plots; 1 page for autocorrelation plots). \textit{(10 points)}}
 
 All signs point toward convergence.
 \begin{itemize}
-  \item The traceplots for all the parameters and the posterior mean deviance ($-2\log(p(\textbf{y}|\theta))$ look random around a horizontal line without any snaking, periodicity, trending, or sharp jumps, i.e., mostly like fuzzy caterpillars, a sign of convergence.
-  \item The density plots showing an empirical density function for each parameter and the posterior mean deviance all look smooth and unimodal with ranges limited to reasonable log-ORs between -1 and just above 1 (except for the deviance, which ranges from 5530 to 5570, also reasonable), all traits that do not raise red flags for non-convergence. 
-  \item The autocorrelation plots die down to near zero almost immediately for every parameter, showing that for lags $k$ of $k > 1$, observations are not correlated, also a sign of convergence.
+  \item The trace plots for all the parameters and posterior mean deviance ($-2\log(p(y|\theta))$) look random around a horizontal line without any snaking, periodicity, trending, or sharp jumps, i.e., mostly like fuzzy caterpillars, a sign of convergence.
+  \item The density plots, which show an empirical density function for each parameter and the posterior mean deviance, all look smooth and unimodal with ranges limited to reasonable log-ORs between -1 and slightly over 1 (except for the deviance, which ranges from 5530 to 5570, also reasonable), all traits that do not raise red flags for non-convergence. 
+  \item The autocorrelation plots die down almost immediately for every parameter to near zero as the lag $k$ increases from 0 to 1 and beyond, showing that for $k > 1$, observations are not correlated, also a sign of convergence.
 \end{itemize}
 
 
-```{r results=TRUE}
+```{r try again, results=TRUE}
 
-knitr::include_graphics("Traceplot_LogisticReg1.pdf")
+knitr::include_graphics(
+  path = file.path("pdfs", 
+                   "TraceplotLogisticReg1.pdf"))
 
-knitr::include_graphics("Traceplot_LogisticReg2.pdf")
+knitr::include_graphics(
+  path = file.path("pdfs", 
+                   "TraceplotLogisticReg2.pdf"))
 
-include_graphics("ACF_LogisticReg.pdf")
+knitr::include_graphics(
+  path = file.path("pdfs", 
+                   "ACFLogisticReg.pdf"))
 
 ```
 
@@ -552,19 +564,20 @@ include_graphics("ACF_LogisticReg.pdf")
 The Geweke test tests whether the Markov Chain is constant between early and later parts of the sequence of numbers by comparing subsamples of the random samples for each parameter, here comparing the first 10% of the chain to the last half. It outputs the z-statistic and indicates non-convergence if the test-statistic is > 1.96 in absolute value.\footnote{Lecture 5, slide 46.}
 
 The Geweke test results here are:
-```{r results=TRUE}
+
+```{r geweke, results=TRUE}
 
 geweke.diag(overweight.mcmc[,1:7])
 
 ```
 
-None of these results for any of the parameters in any of the three chains run are > 1.96, so the Geweke test does not show evidence of lack of convergence. Woohoo!
+None of these results for any of the parameters in any of the three chains run have absolute values larger than 1.96, so the Geweke test does not show evidence of lack of convergence. Woohoo!
 
 \pagebreak
 
 # R code
 
-```{r ref.label=knitr::all_labels(), echo = T, eval = F}
+```{r force code display, ref.label=knitr::all_labels(), echo = T, eval = F}
 
 ```
 
