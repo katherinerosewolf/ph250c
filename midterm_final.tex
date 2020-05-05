@@ -49,7 +49,7 @@
 \newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
 
 \usepackage{alltt}
-\title{\vspace{-1cm}}
+\title{\vspace{-2.7cm}}
 \author{\textbf{Midterm Examination} \\ \textbf{Katherine Wolf} \\ PH250C Spring 2020 \\ March 31, 2020}
 \date{}
 
@@ -71,6 +71,8 @@
 \usepackage{txfonts}
 \usepackage{dejavu}
 \usepackage{mathpazo}
+\usepackage[labelfont=bf]{caption}
+\usepackage[labelsep=period]{caption}
 
 % set fonts
 \setmainfont{Palatino Linotype}
@@ -78,7 +80,7 @@
 \setmonofont{Consolas}
 
 % set the margins of the document
-\usepackage[top=.5in, bottom=.9in, left=.5in, right=.5in]{geometry}
+\usepackage[top=.8in, bottom=.9in, left=.8in, right=.9in]{geometry}
 
 % remove automatic indenting
 \setlength{\parindent}{0pt}
@@ -89,55 +91,57 @@
 
 \maketitle
 
-\vspace{-.5cm}
+\vspace{-.6cm}
 
 \begin{enumerate}[label=\textbf{\arabic*.}]
 
-  \item \textbf{Background.} Both exposure to fine particulate matter $\leq 2.5$ microns in diameter (PM\textsubscript{2.5}) and racial residential segregation, the separation of two or more groups into different neighborhoods by race, of African Americans in the United States (US) have been associated with common negative health outcomes including cardiovascular disease, respiratory disease, lung cancer, low birthweight, preterm birth, and death. Evidence is mounting that the toxicity of PM\textsubscript{2.5} varies according to its chemical composition. Moreover, component concentrations can be used to identify PM\textsubscript{2.5} sources.
+  \item \textbf{Background.} Researchers have estimated that exposure to airborne fine particulate matter $\leq 2.5$ microns in diameter (PM\textsubscript{2.5}) resulted in over 4.2 million deaths worldwide and 88,400 deaths per year in the United States (US) in 2015.\footnote{1. Cohen AJ, Brauer M, Burnett R, et al. Estimates and 25-year trends of the global burden of disease attributable to ambient air pollution: an analysis of data from the Global Burden of Diseases Study 2015. The Lancet 2017;389(10082):1907–18. doi: 10.1016/S0140-6736(17)30505-6.} Researchers have also shown that African Americans in the US experience exposure to higher concentrations of PM\textsubscript{2.5} on average than non-Hispanic/Latinx whites,\footnote{Mikati I, Benson AF, Luben TJ, Sacks JD, Richmond-Bryant J. Disparities in distribution of particulate matter emission sources by race and poverty status. Am J Public Health 2018;108(4):480–5. doi:10.2105/AJPH.2017.304297.} and that African Americans living in more segregated areas, where racial residential segregation is defined as the physical separation of residences by race, experience even higher mean long-term concentrations of PM\textsubscript{2.5} than African Americans living in less segregated areas.\footnote{1. Bravo MA, Anthopolos R, Bell ML, Miranda ML. Racial isolation and exposure to airborne particulate matter and ozone in understudied US populations: Environmental justice applications of downscaled numerical model output. Environment International 2016;92–93:247–55. doi:10.1016/j.envint.2016.04.008.} Both exposure to PM\textsubscript{2.5} and racial residential segregation of African Americans in the US are associated with a set of common negative health outcomes including cardiovascular disease, respiratory disease, lung cancer, low birthweight, preterm birth, and death, and evidence is mounting that the toxicity of PM\textsubscript{2.5} varies according to its chemical composition.\footnote{Dai L, Zanobetti A, Koutrakis P, Schwartz JD. Associations of fine particulate matter species with mortality in the United States: a multicity time-series analysis. Environ Health Perspect 2014;122(8):837–42. doi:10.1289/ehp.1307568.} No study to date, however, has evaluated associations between PM\textsubscript{2.5} component concentrations and African American racial residential segregation in the US.
   
-  \item \textbf{Specific aim.} We will estimate the association between racial residential segregation and PM\textsubscript{2.5} component concentrations in census tracts in urban areas of the United States.
+  \item \textbf{Specific aim.} We will estimate the association between racial residential segregation and PM\textsubscript{2.5} component concentrations in the US.
+  
   \item \textbf{Approach.}
   
   \begin{enumerate}[label=\textbf{\alph*.}]
     
-    \item \textbf{Study population.} The population for this study will include the 886 census tracts both (1) classified as urban by Department of Agriculture Rural-Urban Commuting Area codes and (2) that contain Environmental Protection Agency (EPA) Chemical Speciation Network (CSN) monitors with at least 3 years and 180 days of observations from 2005 to 2015.
+    \item \textbf{Study population.} The population for this study will be the 886 census tracts both (1) classified as urban by Department of Agriculture Rural-Urban Commuting Area codes and (2) that contain Environmental Protection Agency (EPA) Chemical Speciation Network (CSN) monitors with at least 3 years and 180 days of observations from 2005 to 2015.
     
-    \item \textbf{Outcome.} The outcomes for this study will be the 2005-2015 ten-year mean concentration in micrograms ($\mu g$) per cubic meter ($m^3$) of PM\textsubscript{2.5} components\footnote{Components include (where $n$ indicates the number of urban census tracts with at least 180 daily observations of that component over at least 3 years) total PM\textsubscript{2.5} ($n=886$), aluminum ($n=276$), arsenic (As) ($n=276$), bromine (Br) ($n=274$), cadmium ($n=276$), calcium ($n=276$), chlorine ($n=276$), copper (Cu) ($n=275$), iron (Fe) ($n=276$), lead (Pb) ($n=276$), mercury ($n=162$), nickel (Ni) ($n=276$), silicon ($n=276$), sodium ($n=264$), titanium ($n=276$), vanadium (V) ($n=276$), zinc (Zn) ($n=276$), ammonium ion (NH4+) ($n=213$), sodium ion ($n=213$), nitrate ion (NO3–) ($n=267$), sulfate ion (SO42–) ($n=277$), and elemental carbon (EC) ($n=201$).} generated by calculating the mean of monthly means of daily means measured by the Environmental Protection Agency Chemical Speciation Network of PM\textsubscript{2.5} component monitors within a census tract.
+    \item \textbf{Outcome.} The outcomes for this study will be the measured 2005-2015 ten-year mean concentrations in micrograms ($\mu g$) per cubic meter ($m^3$) of PM\textsubscript{2.5} components\footnote{Components include (where $n$ indicates the number of urban census tracts with at least 180 daily observations of that component over at least 3 years) total PM\textsubscript{2.5} ($n=886$), aluminum ($n=276$), arsenic (As) ($n=276$), bromine (Br) ($n=274$), cadmium ($n=276$), calcium ($n=276$), chlorine ($n=276$), copper (Cu) ($n=275$), iron (Fe) ($n=276$), lead (Pb) ($n=276$), mercury ($n=162$), nickel (Ni) ($n=276$), silicon ($n=276$), sodium ($n=264$), titanium ($n=276$), vanadium (V) ($n=276$), zinc (Zn) ($n=276$), ammonium ion (NH\textsubscript{4}\textsuperscript{+}) ($n=213$), sodium ion (Na\textsuperscript{+}) ($n=213$), nitrate ion (NO\textsubscript{3}\textsuperscript{-}) ($n=267$), sulfate ion (SO\textsubscript{4}\textsuperscript{2-}) ($n=277$), and elemental carbon (EC) ($n=201$).} within a census tract, calculated by averaging daily mean PM\textsubscript{2.5} concentrations reported by EPA CSN monitors.
     
-    \textbf{Exposure.} The exposure for this study will be the Black racial isolation in a census tract as measured by the spatial isolation index developed by Anthopolos et al.\footnote{Anthopolos R, James SA, Gelfand AE, Miranda ML. A spatial measure of neighborhood level racial isolation applied to low birthweight, preterm birth, and birthweight in North Carolina. Spat Spatiotemporal Epidemiol 2011;2(4):235–46.}. The index ranges from 0 (no spatial isolation, in which a Black census tract resident only encounters non-Black neighbors) to 1 (complete spatial isolation, in which a Black census tract resident only encounters Black neighbors).
+    \textbf{Exposure.} The exposure for this study will be the African American racial residential segregation of a census tract as calculated from 2010 US Census race and ethnicity data using the spatial isolation index developed by Anthopolos et al.\footnote{Anthopolos R, James SA, Gelfand AE, Miranda ML. A spatial measure of neighborhood level racial isolation applied to low birthweight, preterm birth, and birthweight in North Carolina. Spat Spatiotemporal Epidemiol 2011;2(4):235–46. doi:10.1016/j.sste.2011.06.002.} The index ranges from 0 (no spatial isolation, in which a Black census tract resident only encounters non-Black neighbors) to 1 (complete spatial isolation, in which a Black census tract resident only encounters Black neighbors).
     
-    \textbf{Confounders.} Models will consider covariate adjustment for 
+    \textbf{Confounders.} Models will include covariate adjustment\footnote{Other potential covariates considered for inclusion include total census tract population (persons), sex (percent female), age (percent 0-19 years old and percent 65 years old and older), median household income (dollars), and unemployment (percent of households with one family member unemployed).} for 
 \begin{itemize}
-  \item Total census tract population (persons)
   \item Population density (persons per square kilometer)
-  \item Sex (percent female)
   \item Race/ethnicity, including percent white (not Hispanic or Latinx), Percent Hispanic or Latinx (any race), percent African American (not Hispanic or Latinx), percent Asian (not Hispanic or Latinx), and percent other
   \item Median home value of owner-occupied housing units (dollars)
-  \item Median household income (dollars)
-  \item Age, including percent 0-19 years old and percent 65 years old and older
   \item Housing tenure (percent of homes renter-occupied)
   \item Linguistic isolation (percent of households in which no one 14 and over either (1) speaks English only or (2) speaks a language other than English at home and speaks English "very well")
   \item Education (percent of adults $\geq$ 25 years of age with less than a high school education)
-  \item Poverty (percent of the population in poverty)
-  \item Unemployment (percent of households with one family member unemployed)
-  \item Region (Midwest, Northeast, South, West)
+  \item Poverty (percent of the population below twice the federal poverty limit in 2010)
+  \item Census region (Midwest, Northeast, South, West) (as PM\textsubscript{2.5} composition varies by region)
 \end{itemize}
     
-    \item \textbf{Target parameter.} We seek to estimate the change in the concentration (in $\mu g/m^3$)) of each PM\textsubscript{2.5} component per 0.2-unit change in African American spatial isolation, holding the values of the other covariates listed above constant. We will use a restricted polynomial spline model to avoid the assumption of a linear dose-response relationship.
+    \item \textbf{Target parameter.} We seek to estimate the change in the concentration of each PM\textsubscript{2.5} component (in $\mu g/m^3$) per 0.2-unit change in African American spatial isolation, which we will estimate using a restricted polynomial spline model to allow for non-linearity in the dose-response relationship.
     
     \end{enumerate}
   
-  \item \textbf{Methodological issue.} One important limitation of the proposed analysis is selection bias induced by the limitation of the study to census tracts containing EPA CSN PM\textsubscript{2.5} component monitors. For example, racism in governmental bodies regulating land uses might affect Black racial isolation in neighbhorhoods (via decisions on acceptable land uses, mortgages, etc.), monitor siting and activity, and the presence of PM\textsubscript{2.5} sources. Meanwhile, the EPA explicitly prioritizes monitoring in areas where they expect to find exceedances of federal PM\textsubscript{2.5} standards, particularly in areas with known PM\textsubscript{2.5} sources that have produced PM\textsubscript{2.5} exceedances in the past. The selection bias results from conditioning (selecting census tracts based) on an effect (presence of an active monitor) of both an unmeasured cause of the exposure (racism in governmental bodies) and an unmeasured cause of the outcome (presence of a PM\textsubscript{2.5} source). (Racism in governmental bodies, by affecting siting decisions for PM2.5 component sources, also induces ordinary unmeasured confounding by opening a backdoor path between the exposure and the outcome that runs exclusively through unmeasured variables in the current study). A simplified directed acyclic graph (DAG) illustrating the problem is shown below in Figure 1.\footnote{Hernán MA, Hernández-Díaz S, Robins JM. A Structural Approach to Selection Bias: Epidemiology 2004;15(5):615–25. doi:10.1097/01.ede.0000135174.63482.43. This particular form of selection bias takes the form of the bias illustrated in Figure 6c on page 617, but with additional ordinary unmeasured confounding introduced by the arrow from "racism in governmental bodies regulating land uses (unmeasured)", which causes the exposure, to "PM\textsubscript{2.5} component source present (unmeasured)", which causes the outcome.}
+  \item \textbf{Methodological issue.} One important limitation of the proposed analysis is selection bias induced by the restriction of the study population to census tracts containing EPA CSN PM\textsubscript{2.5} component monitors. For example, historical racism in governmental bodies regulating land uses might affect Black racial isolation in neighborhoods (e.g., through historical Jim Crow and redlining policy), monitor siting and activity, and the presence of PM\textsubscript{2.5} sources. Meanwhile, the EPA explicitly prioritizes monitoring in areas where they expect to find exceedances of federal PM\textsubscript{2.5} standards, particularly in areas with known PM\textsubscript{2.5} sources that have produced PM\textsubscript{2.5} exceedances in the past. The potential selection bias results from conditioning census tract selection on an effect (presence of an active monitor) of both an unmeasured cause of the exposure (racism in governmental bodies) and an unmeasured cause of the outcome (presence of a PM\textsubscript{2.5} source). A simplified directed acyclic graph (DAG) illustrating the problem is shown in Figure 1.\footnote{Hernán MA, Hernández-Díaz S, Robins JM. A Structural Approach to Selection Bias: Epidemiology 2004;15(5):615–25. doi:10.1097/01.ede.0000135174.63482.43. This particular form of selection bias takes the form of the bias illustrated in Figure 6c on page 617, but with additional ordinary unmeasured confounding introduced by the arrow from "racism in governmental bodies regulating land uses (unmeasured)", which causes the exposure, to "PM\textsubscript{2.5} component source present (unmeasured)", which causes the outcome.} (Racism in governmental bodies, by directly affecting siting decisions for PM\textsubscript{2.5} component sources, might also induce ordinary unmeasured confounding even without the selection bias by opening a backdoor path between the exposure and the outcome that runs exclusively through unmeasured variables, also illustrated in the DAG.)
   
-  \textbf{Figure 1. DAG showing selection bias from including only census tracts with PM\textsubscript{2.5} component monitors.}
-  
-  \includegraphics[height=2.3in]{midtermdag.JPG}
+  \begin{figure}
+    \centering
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[height=2.3in]{midtermdag.JPG}  % first figure itself
+        \caption{\textbf{DAG showing selection bias from including only census tracts with PM\textsubscript{2.5} component monitors. Purple arrows show the relationships leading to the potential selection bias, whereas the brown arrow shows the relationship leading to potential unmeasured confounding even without selection bias.}}
+    \end{minipage}\hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[height=2.3in]{detectionlimit.jpg}  % second figure itself
+        \caption{\textbf{Percentage of observations (daily means) below the MDL for each PM\textsubscript{2.5} component.}}
+    \end{minipage}
+  \end{figure}
 
-Another limitation of the proposed analysis is the missing (but bounded) data in the outcome variables, ten-year mean PM\textsubscript{2.5} component concentrations, due to the relationship between the ambient concentrations of the PM\textsubscript{2.5} components and the monitor method detection limit (MDL) for each component. Figure 1 shows the percentage of observations (daily means) below the MDL for each PM\textsubscript{2.5} component.\footnote{I realize that I am only supposed to identify one, but I add this second one because I would genuinely love advice on how to deal with it.}
-
-  \textbf{Figure 2. Percentage of observations (daily means) below the MDL for each PM\textsubscript{2.5} component.}
-
-  \includegraphics[height=2.3in]{detectionlimit.jpg}
+Another limitation of the proposed analysis is the missing (but bounded) data in the outcomes, ten-year mean PM\textsubscript{2.5} component concentrations, due to the relationship between the ambient concentrations of the PM\textsubscript{2.5} components and the monitor method detection limit (MDL) for each component. Figure 1 shows the percentage of observations (daily means) below the MDL for each PM\textsubscript{2.5} component.\footnote{I realize that I am only supposed to identify one, but I add this second one because I would genuinely love advice on how to deal with it.}
 
 \end{enumerate}
       
