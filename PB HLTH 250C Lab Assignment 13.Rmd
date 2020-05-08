@@ -1,0 +1,196 @@
+---
+title: "**Lab Activity: Instrumental Variables Analysis**"
+fontsize: 11pt
+header-includes: 
+  \usepackage{fancyhdr}
+  \usepackage{soul}
+output:
+  pdf_document:
+    latex_engine: pdflatex
+    md_extensions: +inline_notes
+    number_sections: no
+  word_document: default
+mathfont: Palatino
+monofont: Courier
+mainfont: Palatino
+sansfont: Helvetica
+fontfamily: mathpazo
+---
+\pagestyle{fancyplain}
+\rhead{PB HLTH 250C, Spring 2020}
+\lhead{}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F, warning = FALSE, message = FALSE, global.par=TRUE)
+```
+
+We will estimate the relationship between body mass index (BMI) and incident stroke in the Framingham study. We are concerned about uncontrolled confounding for the BMI-stroke relationship, so we will be conducting an instrumental variables analysis using \emph{FTO} genotype as the instrument (i.e. \emph{Mendelian Randomization}).
+
+The included dataset has the usual data from the Framingham study, with the addition of a variable named \texttt{fto}, which is the number of variant (A) alleles in the \emph{FTO} gene.
+
+Load required packages and read data:
+
+```{r}
+load("StrokeMR.Rdata")
+ 
+data$fto <- factor(data$fto, labels=c("TT","AT","AA")) # Value labels for alleles
+
+library("MASS")
+library("tableone")
+library("knitr")
+library("xtable")
+library("HardyWeinberg")
+library("ivtools")
+library("sandwich")
+```
+
+Recall, for something to be a valid instrument, the following conditions must hold:
+
+1.  *FTO* genotype is independent of unmeasured confounders (**Marginal exchangeability**)
+2.	*FTO* genotype is associated with BMI. (**Relevance**)
+3.  *FTO* genotype is related to stroke only through BMI (**Exclusion restriction**)
+
+**Relevance** is the only of these that can be verified empirically (somewhat), but we can also provide some support for the **marginal exchangeability** assumption. 
+
+# Marginal exchangeability
+
+Although it's impossible to verify marginal exchangeability, one could consider potential evidence for it by considering the relationship between the instrument and known (measured) confounders--if the instrument appears to be independent of known factors, that provides some support for its indepenence with unknown factors (of course, it's entirely possible to be independent of known factors and related to some $U$).
+
+As a preliminary step, consider 1) if these genes are in Hardy-Weinberg equilibrium (the genotype proportions are what are expected in a stable population given the allele frequencies), and 2) the relationship between the genotypes and the observed confounders. For now let's ignore the limitations of significance testing, and consider the $p$-values as measures of compatibility between our data and a hypothesis of a lack of association:
+```{r marginal exchangeability}
+# Are the alleles distributed randomly across the population? 
+# (Hardy-Weinberg Equilibrium)
+attach(data)
+table(fto)
+prop.table(table(fto))
+HWChisq(table(fto))
+detach(data)
+
+# Relationship between genotypes and covariates (age, sex, smoking):
+table1 <- CreateTableOne(c("age","male","cursmoke"),
+                         strata="fto",
+                         data=data,
+                         factorVars=c("fto","male","cursmoke"))
+kable(print(table1,
+                   showAllLevels = TRUE,
+                   printToggle = FALSE,
+                   noSpaces = TRUE,
+                   catDigits=1,
+                   contDigits=1))
+```
+
+The lack of association between *FTO* and the known covariates (similar means/proportions for the covariates across genotypes; large p-values) provides some evidence that the genotypes may be independent of other, similar factors. However, this is not absolute evidence that the instrument satisfies this criteria--in particular, we might be concerned about population stratification with genotype as an instrument.
+
+# Relevance
+
+The relevance assumption, that the instrument is related to the exposure (phenotype) is easier assess (after all, we chose this instrument because we had evidence that it was related to the exposure). We perform a linear regression of BMI on the *FTO* genotype:
+
+```{r relevance}
+summary(lm(bmi ~ factor(fto), data=data)) 
+```
+
+# Crude Analysis
+
+Our first step is to fit a crude (unadjsuted) model for the relationship between stroke and BMI. The model of interest is a log-binomial model for stroke as a function of BMI (exposure):
+\begin{equation*}
+\begin{split}
+  \mathrm{log}(\pi) & = \beta_0 + \beta_1 \mathrm{bmi}  \\
+  \mathrm{stroke} & \sim \mathrm{Binomial}(1, \pi)
+\end{split}
+\end{equation*}
+
+with $\exp(\beta_1)$ the $RR$ of stroke for a 1-unit increase in BMI. Because the above model is ill-fitting due to the non-canonical link function, we will use the Poisson approximation (with robust standard errors):
+
+```{r crude}
+crude <- glm(stroke~bmi, family=poisson(link="log"), 
+             data=data)
+b.crude <- coef(crude)
+se.crude <- sqrt(diag(vcovHC(crude))) # Robust SEs
+model.crude <- cbind(b.crude, se.crude)[2,]
+```
+
+# Standard Adjusted Analysis
+
+The fully-adjusted outcome model is a log-binomial model for stroke as a function of BMI (exposure), age, sex, and smoking status:
+\begin{equation*}
+\begin{split}
+  \mathrm{log}(\pi) & = \beta_0 + \beta_1 \mathrm{bmi} + \beta_2 \mathrm{age} + \beta_3 \mathrm{male} + \beta_4 \mathrm{cursmoke} \\
+  \mathrm{stroke} & \sim \mathrm{Binomial}(1, \pi)
+\end{split}
+\end{equation*}
+We again use the Poisson approximation with robust standard errors:
+
+```{r standard}
+fitY.LX <- glm(stroke~bmi + age + male + cursmoke, 
+                family=poisson(link="log"),
+                data=data)
+b.standard <- coef(fitY.LX)
+se.standard <- sqrt(diag(vcovHC(fitY.LX))) # Robust SEs
+model.standard <- cbind(b.standard, se.standard)[2,]
+```
+
+# Two-stage Prediction Substitution
+
+We now use two-stage prediction substitution to obtain the instrumental variables estimate of the relationship between BMI and stroke with the `ivtools` package,\footnote{Sjolander, Arvid, and Torben Martinussen. Instrumental variable estimation with the R package \texttt{ivtools}. \emph{Epidemiologic Methods} 8.1 (2019).} which requires the object for the fit from the standard model (the 2nd stage, which we already have stored in `fitY.LX`), and the object for the model where the exposure (BMI) is regressed on the instrument, and any covariates (which we will call `fitX.LZ`):
+
+The **first stage** of the two-stage estimation procedure involves fitting a regression model for the exposure (BMI) as a function of the instrument and any covariates:
+\begin{equation*}
+\begin{split}
+  \mathrm{BMI} & = \alpha_0 + \alpha_1 \mathrm{age} + \alpha_2 \mathrm{male} + \alpha_3 \mathrm{cursmoke} + \alpha_4 \mathrm{fto} + \epsilon \\
+  \epsilon & \sim \mathrm{N}(0, \sigma^2_\epsilon)
+\end{split}
+\end{equation*}
+and  the predicted values from this model are included in place of the exposure in the outcome model. 
+
+```{r 2sps}
+# Fit the 1st stage model:
+fitX.LZ <- glm(formula=bmi ~ age + male + cursmoke + fto, data=data, 
+               family=gaussian)
+```
+
+We provide the model fit from the 1st and 2nd stage models to the \texttt{ivglm} requesting the \texttt{"ts"} estimation method (for two-stage), which re-fits the outcome model with the predicted values of the exposure from the first stage model, and corrects the standard errors:
+
+```{r}
+# Fit the 2-stage prediction substitution model:
+fitIV_ts <- ivglm(estmethod="ts", 
+                  fitX.LZ = fitX.LZ,
+                  fitY.LX = fitY.LX,
+                  data=data)
+summary(fitIV_ts)
+confint(fitIV_ts)
+model.IVts <- cbind(fitIV_ts$est["bmi"], sqrt(fitIV_ts$vcov["bmi","bmi"]))
+```
+
+# Control function approach
+
+The **control function** approach to IV analysis is similar to the two-stage prediction substitution estimator we used above, but also includes the residual term ($\hat{\epsilon}$) from the first stage as a predictor in the final second stage model. The rationale is that the residual terms should be correlated with unmeasured confounders $U$, so including them may improve confounder control (see references presented in class for more detail). This is similar to the previous function call, but with the \texttt{"ctrl=TRUE"} option:
+
+```{r}
+# Fit the 2-stage prediction substitution model:
+fitIV_cf <- ivglm(estmethod="ts", ctrl=TRUE,
+                  fitX.LZ = fitX.LZ,
+                  fitY.LX = fitY.LX,
+                  data=data)
+summary(fitIV_cf)
+confint(fitIV_cf)
+model.IVcf <- cbind(fitIV_cf$est["bmi"], sqrt(fitIV_cf$vcov["bmi","bmi"]))
+```
+
+Note that the model output includes a variable \texttt{R} which is the \emph{residual} from the 1st stage model. 
+
+# Summarize results
+
+Comparing the results:
+
+```{r}
+# combine model results
+all.models <- rbind(model.crude, model.standard, model.IVts, model.IVcf) 
+all.models <- cbind(exp(all.models[,1]), all.models) # Add column for RR
+
+# Add names and output the final table:
+rownames(all.models) <- c("Crude", "Standard", "IV-2SPS", "IV-Control Function")
+colnames(all.models) <- c("RR","log-RR","SE.logRR")
+kable(all.models, digits=2)
+```
+
+The standard (covariate-adjusted) analysis appears to suggest only a modest amount of confounding, but the estimates fromt he IV analysis are attenuated. Notice that the standard errors increase noticeably in the IV analyses--indicating that the instrument is a less than perfect predictor of the exposure. The 2SPS and Control Function methods seem to yield similar inferences. 
