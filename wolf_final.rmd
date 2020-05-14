@@ -69,19 +69,23 @@ library(kableExtra)
 \begin{enumerate}[label=\textbf{\arabic*.}]
   \item \textbf{Deterministic bias analysis incorporates uncertainty in the bias parameters into your analysis.}
 
-FALSE.
+FALSE. Deterministic bias analysis specifies biasing relationships as if they were known with certainty (lecture 8, slide 9), assigning one fixed value to each bias parameter that is not presumed to coem from a distribution.
 
   \item \textbf{Probabilistic bias analysis yields a range of bias-corrected measures of association.}
 
-TRUE.
+TRUE. Probabilistic bias analysis yields a distribution of bias-corrected estimates (that we can then summarize concisely with an estimate of the central tendency and interval) (lecture 10, slide 6). (As Dr. Bradshaw uses the term, the distribution accounts for uncertainty in the bias parameters but does not incorporate random error in the original estimate of the target parameter (lecture 10, slide 7).)
 
   \item \textbf{The gamma distribution is a good choice for the distribution of the bias parameter for a proportion/prevalence/probability.}
+  
+FALSE. A Gamma-distributed variable has no upper bound, i.e., a $\theta \sim Gamma(a, b)$ has the range $\theta \in (0, \infty)$, whereas proportions/prevalences/probabilities can only range from 0 to 1. Better choices might be a uniform, beta, trapezoid, or triangle distribution specified to range from 0 to 1.
 
   \item \textbf{The normal distribution is a good choice for the distribution of the bias parameter for a log-relative risk.}
+  
+TRUE. A log relative risk can theoretically range from $-\infty$ to $\infty$, as does the normal distribution. \textcolor{red}{read Greenland for this}
 
   \item \textbf{One reason quantitative bias analysis is important is that systematic errors can be larger than random errors.}
-
-TRUE.
+  
+TRUE. Not only can systematic errors be larger than random errors, but also they do not necessarily shrink as sample size increases, unlike random errors.
 
 \end{enumerate}
 
@@ -95,20 +99,84 @@ TRUE.
   \item \textbf{The authors mention using "3 jointly estimated models to simultaneously model the 'true' exposure and estimate its association with ASD." For the analysis in this paper, write out each of these models as described by the authors.\footnote{Note correction at top of page 3. Text should read: ’probability of reported exposure, given "true" exposure and case/control status...’} Consider only the non-differential misclassification scenario (group 2). Give definitions for each of the covariates and parameters in your models. Specify any distributional assumptions for the outcomes on the models, but here you do not need to specify the priors on the model parameters: \textit{Hint: refer to misclassification example from the Bayesian Bias Analysis lecture.}}
   \begin{enumerate}[label=\textbf{\alph*.}]
     \item \textbf{Exposure model (10 points)}
+    
+\begin{align*}
+logit(\pi_{a,i}) &= \alpha_1 + \alpha_2 d_{1,i} + \alpha_3 d_{2,i} + \alpha_4 r_i + \alpha_5 t_i + \alpha_6 f_i \\
+  &+ \alpha_7 s_i + \alpha_8 g_i + \alpha_9 b_{1,i} + \alpha_{10} b_{2,i} + \alpha_{11} b_{3,i} + \alpha_{12} b_{4,i} \\
+a_i &\sim Bernoulli(\pi_{a,i}) 
+\end{align*}
+
+    
     \item \textbf{Measurement model (10 points)}
+    
+\begin{align*}
+p_{a_i^*} &= a_i Se + (1 - a_i)(1 - Sp) \\
+a_i^* &\sim Bernoulli(\pi_{a^*,i})
+\end{align*}
+
     \item \textbf{Outcome model (10 points)}
-  \end{enumerate}
+
+\begin{align*}
+logit(\pi_{y,i}) &= \beta_1 + \beta_2 d_{1,i} + \beta_3 d_{2,i} + \beta_4 race_i + \beta_5 t_i + \beta_6 f_i \\
+  &+ \beta_7 s_i + \beta_8 g_i + \beta_9 b_{1,i} + \beta_{10} b_{2,i} + \beta_{11} b_{3,i} + \beta_{12} b_{4,i} + \beta_{13} a_i \\
+y_i &\sim Bernoulli(\pi_{y,i})
+\end{align*}
+
+where
+
+\begin{itemize}
+  \item $i$ indexes the study participants;
+  \item $d_i$ is a categorical covariate for maternal education, factored into the binary covariates
+  \begin{itemize}
+    \item $d_{0,i}$, where $d_{0,i} = 1$ indicates that participant $i$'s mother had a college degree and $d_{0,i} = 0$ otherwise; $d_{0,i}$ serves as the reference, thus not appearing in the model but rather subsumed in the intercept term ($\alpha_1$ in the exposure model or $\beta_1$ in the outcome model);
+    \item $d_{1,i}$, where $d_{1,i} = 1$ indicates that participant $i$'s mother had a high school education and $d_{1,i} = 0$ otherwise; and
+    \item $d_{2,i}$, where $d_{2,i} = 1$ indicates that participant $i$'s mother had at least some college and $d_{2,i} = 1$ otherwise;
+  \end{itemize}
+  \item $r_i$, a binary covariate for race ethnicity, where $r_i = 1$ indicates that participant $i$ identifies as a race or ethnicity other white and not Hispanic or Latinx, and $r_i = 0$ indicates that participant $i$ is white and not Hispanic or Latinx;
+  \item $t_i$, an ordinal integer covariate indicating the parity of participant $i$;
+  \item $s_i$, a binary covariate for sex, where $s_i = 1$ indicates that participant $i$ is female and $s_i = 0$ that participant $i$ is other than female;
+  \item $f_i$, a binary covariate for pet ownership during pregnancy, where $f_i = 1$ indicates yes and $f_i = 0$ indicates no;
+  \item $g_i$ is an ordinal integer covariate for the matching factor of maternal age at the interview;
+  \item $b_i$ is a five-category categorical covariate for region of birth, factored into the five binary indicator covariates
+  \begin{itemize}
+    \item $b_{0,i}$, where $b_{0,i} = 1$ if participant $i$ was recruited from unnamed Regional Center 0 and $b_{0,i} = 0$ otherwise; it serves as the reference, thus not appearing in the model but rather is subsumed in the intercept term ($\alpha_1$ in the exposure model or $\beta_1$ in the outcome model);
+    \item $b_{1,i}$, where $b_{1,i} = 1$ indicates that participant $i$ was recruited from unnamed Regional Center 1 and $b_{1,i} = 0$ otherwise;
+    \item $b_{2,i}$, where $b_{2,i} = 1$ indicates that participant $i$ was recruited from unnamed Regional Center 2 and $b_{2,i} = 0$ otherwise;
+    \item $b_{3,i}$, where $b_{3,i} = 1$ indicates that participant $i$ was recruited from unnamed Regional Center 3 and $b_{3,i} = 0$ otherwise; and
+    \item $b_{4,i}$, where $b_{4,i} = 1$ indicates that participant $i$ was recruited from unnamed Regional Center 4 and $b_{4,i} = 0$ otherwise;
+  \end{itemize}
+  \item $a_i$ is a binary variable (latent, i.e., unobserved) for the true exposure, where $a_i = 1$ indicates that participant $i$ was truly exposed to imidacloprid from 3 months before conception until birth, and $a_i = 0$ otherwise;
+  \item $a_i^*$ is a binary variable for the reported exposure, where $a_i = 1$ indicates that the authors categorized participant $i$ as exposed to imidacloprid because the mother reported any household usage of sprays, dusts, powders, or skin applications for fleas or ticks on pets from 3 months before conception until birth, and $a_i^* = 0$ otherwise;
+  \item $y_i$ is a binary variable for the outcome, where $y_i = 1$ indicates that the participant had a diagnosis of autism spectrum disorder and $y_i = 0$ otherwise;
+  \item $\pi_{a,i}$ is the probability that $a_i=1$;
+  \item $\pi_{a^*,i}$ is the probability that $a_i^*=1$;
+  \item $\pi_{y,i}$ is the probability that $y_i=1$;
+  \item $Se$ is the sensitivity of the exposure assignment, i.e., the proportion of the truly exposed population (for whom $a_i=1$) who would be classified as exposed, $a_i^*=1$;
+  \item $Sp$ is the specificity of the exposure assignment, i.e., the proportion of the truly unexposed population (for whom $a_i=0$) who would be classified as unexposed, $a_i^*=0$.
+    
+\end{itemize}
+
+\end{enumerate}
 
 
 \newpage
 
-  \item \textbf{The authors describe a sequence of analyses where each one treats the sensitivity and false positive rate (1-specificity) as fixed. In the case of non-differential misclassification (group 2), sensitivity ranges from 0.70-0.95 and false positive probability (1-specificity) from 0.00-0.20 for both cases (ASD) and controls (TD). Instead of specific fixed scenarios, describe one possible set of prior distributions for sensitivity and specificity that would be consistent with these ranges of values (5 points) \textit{Hint: Assume there is no prior probability outside of the stated ranges. You should specify two reasonable distributions of your choice (one for each bias parameter), and include specific values for the hyperparameters.}}
+  \item \textbf{The authors describe a sequence of analyses where each one treats the sensitivity and false positive rate (1-specificity) as fixed. In the case of non-differential misclassification (group 2), sensitivity ranges from 0.70-0.95 and false positive probability (1-specificity) from 0.00-0.20 for both cases (ASD) and controls (TD). Instead of specific fixed scenarios, describe one possible set of prior distributions for sensitivity and specificity that would be consistent with these ranges of values. (5 points) \textit{Hint: Assume there is no prior probability outside of the stated ranges. You should specify two reasonable distributions of your choice (one for each bias parameter), and include specific values for the hyperparameters.}}
+  
+  $Se \sim Trapezoid()$
+  
+  $Sp \sim Trapezoid()$
+  
+  
   
 \newpage
 
   \item \textbf{The model above assumes non-differential exposure misclassification.}
-  \begin{enumerate}[\textbf{label=\alph*.}]
+  \begin{enumerate}[label=\textbf{\alph*.}]
     \item \textbf{Modify and present the approopriate sub-model from question 6 to accommodate \textit{differential} misclassification (this will only involve one of (a), (b), or (c)). Make sure to define each of the necessary bias parameters in this new sub-model. (5 points)}
+    
+To accommodate differential misclassification, we 
+    
     \item \textbf{Assuming this modification, specify the necessary prior distributions for the bias parameters consistent with the group 3 scenario (see Figure 2). (5 points)}
   \end{enumerate}
 \end{enumerate}
